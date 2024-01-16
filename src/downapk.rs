@@ -37,6 +37,7 @@ impl ApkMirror {
 
         let client = Client::builder().default_headers(headers).build().unwrap();
 
+        println!("Heading to apkmirror.com for valid cookies");
         let url = "https://www.apkmirror.com/".to_string();
         let res = client.get(&url).send().await.unwrap().text().await.unwrap();
 
@@ -58,6 +59,7 @@ impl ApkMirror {
     }
 
     pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
+        println!("Searching for {}", search_query);
         let url = format!(
             "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -79,11 +81,13 @@ impl ApkMirror {
                 "link": link,
             }));
         }
+        println!("Finished search for {}", search_query);
 
         Ok(results)
     }
 
     pub async fn download(&self, url: &str) -> Result<Value, Error> {
+        println!("Trying to get all downloadable links from {}", url);
         let res = self.client.get(url).send().await?.text().await?;
 
         let document = Html::parse_document(&res);
@@ -122,15 +126,58 @@ impl ApkMirror {
                 };
 
                 if badge_text != "" && version != "" && download_link != "" {
+                    println!("Found version: {}", version);
                     results.as_array_mut().unwrap().push(json!({
                         "version": version,
-                        "download_link": download_link,
+                        "download_link": match self.download_link(&download_link).await {
+                            Ok(download_link) => download_link,
+                            Err(_) => panic!("Something went wrong while getting download link"),
+                        },
                         "type": badge_text,
                     }));
                 }
             }
         }
         Ok(results)
+    }
+
+    async fn download_link(&self, url: &str) -> Result<String, Error> {
+        println!("Trying to get download page link from {}", url);
+        let res = self.client.get(url).send().await?.text().await?;
+
+        let document = Html::parse_document(&res);
+
+        let selector = Selector::parse("a.accent_bg.btn.btn-flat.downloadButton").unwrap();
+        let final_download_link_selector =
+            Selector::parse("a[rel='nofollow'][data-google-vignette='false']").unwrap();
+
+        let download_link = document.select(&selector).next();
+
+        let final_download_link = match download_link {
+            Some(download_link) => {
+                println!("Found download link page, trying to get final download link");
+                let download_link = self.absolute_url(download_link.value().attr("href").unwrap());
+
+                let res = self.client.get(download_link).send().await?.text().await?;
+
+                let document = Html::parse_document(&res);
+
+                let final_download_link = document.select(&final_download_link_selector).next();
+
+                match final_download_link {
+                    Some(final_download_link) => {
+                        let final_download_link =
+                        self.absolute_url(final_download_link.value().attr("href").unwrap());
+                        println!("Found final download link: {}", final_download_link);
+                        final_download_link.to_string()
+                    }
+                    None => panic!("No download link found"),
+                }
+            }
+            None => panic!("No download link found"),
+        };
+
+        Ok(final_download_link)
     }
 
     // ... other methods here ...
