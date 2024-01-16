@@ -109,7 +109,7 @@ impl ApkMirror {
                     .select(&a_accent_color_download_button_selector)
                     .next()
                     .unwrap();
-                
+               
                 let version = anchor_elem.text().collect::<String>().trim().to_string();
                 let download_link =
                     self.host.to_string() + anchor_elem.value().attr("href").unwrap();
