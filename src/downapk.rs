@@ -1,35 +1,47 @@
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
-use serde_json::Value;
-// use std::collections::HashMap;
 
 pub struct HttpRequester {
-   client: Client,
+    client: Client,
 }
 
 impl HttpRequester {
-   pub fn new() -> Self {
-       let mut headers = HeaderMap::new();
-       headers.insert("Accept-Encoding", HeaderValue::from_static("gzip"));
-       headers.insert("APIKEY", HeaderValue::from_static("6c095e070d272503ebaadda44dd25c3fa0679a39f5059c204d4f0b033e5b695b"));
-       headers.insert("Connection", HeaderValue::from_static("Keep-Alive"));
-       headers.insert("Host", HeaderValue::from_static("secure.uptodown.com"));
-       headers.insert("Identificador", HeaderValue::from_static("Uptodown_Android"));
-       headers.insert("Identificador-Version", HeaderValue::from_static("563"));
-       headers.insert("User-Agent", HeaderValue::from_static("Dalvik/2.1.0 (Linux; U; Android 13; Pixel 5 Build/TQ3A.230901.001)"));
+    pub fn new() -> Self {
+        let mut headers = HeaderMap::new();
+        headers.insert(reqwest::header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
+        headers.insert(
+            reqwest::header::ACCEPT_ENCODING,
+            HeaderValue::from_static("text"),
+        );
+        headers.insert(
+            reqwest::header::ACCEPT_LANGUAGE,
+            HeaderValue::from_static("en-IN,en-US;q=0.9,en;q=0.8"),
+        );
+        headers.insert(
+            reqwest::header::HOST,
+            HeaderValue::from_static("www.apkmirror.com"),
+        );
+        headers.insert("Proxy-Connection", HeaderValue::from_static("keep-alive"));
+        headers.insert(
+            reqwest::header::UPGRADE_INSECURE_REQUESTS,
+            HeaderValue::from_static("1"),
+        );
+        headers.insert(reqwest::header::USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Linux; Android 13; Pixel 5 Build/TQ3A.230901.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/118.0.0.0 Safari/537.36"));
+        headers.insert(
+            "X-Requested-With",
+            HeaderValue::from_static("cf.vojtechh.apkmirror"),
+        );
 
-       let client = Client::builder()
-           .default_headers(headers)
-           .build().unwrap();
+        let client = Client::builder().default_headers(headers).build().unwrap();
 
-       HttpRequester { client }
-   }
+        HttpRequester { client }
+    }
 
-   pub async fn get_app_search(&self, search_query: &str, id_platforma: u32) -> Result<Value, Error> {
-       let url = format!("https://secure.uptodown.com/eapi/v2/apps/search/{}?page%5Blimit%5D=30&page%5Boffset%5D=0&id_plataforma={}&lang=en", search_query, id_platforma);
-       let res = self.client.get(&url).send().await?.json::<Value>().await?;
-       Ok(res)
-   }
+    pub async fn index(&self) -> Result<String, Error> {
+        let url = String::from("http://www.apkmirror.com/");
+        let res = self.client.get(&url).send().await?.text().await?;
+        Ok(res)
+    }
 
-   // ... other methods here ...
+    // ... other methods here ...
 }
