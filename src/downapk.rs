@@ -1,12 +1,15 @@
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
+use scraper::{Html, Selector};
+use serde_json::{json, Value};
 
-pub struct HttpRequester {
+pub struct ApkMirror {
     client: Client,
+    host: String,
 }
 
-impl HttpRequester {
-    pub fn new() -> Self {
+impl ApkMirror {
+    pub async fn new() -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(reqwest::header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
         headers.insert(
@@ -34,13 +37,97 @@ impl HttpRequester {
 
         let client = Client::builder().default_headers(headers).build().unwrap();
 
-        HttpRequester { client }
+        let url = "https://www.apkmirror.com/".to_string();
+        let res = client.get(&url).send().await.unwrap().text().await.unwrap();
+
+        let document = Html::parse_document(&res);
+
+        let selector = Selector::parse("button[class='searchButton']").unwrap();
+
+        assert_eq!(1, document.select(&selector).count());
+
+        ApkMirror { client, host: url }
     }
 
-    pub async fn index(&self) -> Result<String, Error> {
-        let url = "http://www.apkmirror.com/".to_string();
+    fn absolute_url(&self, url: &str) -> String {
+        if url.starts_with("http") {
+            url.to_string()
+        } else {
+            self.host.to_string() + url
+        }
+    }
+
+    pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
+        let url = format!(
+            "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s={}",
+            search_query
+        );
         let res = self.client.get(&url).send().await?.text().await?;
-        Ok(res)
+
+        let document = Html::parse_document(&res);
+
+        let selector = Selector::parse("a[class='fontBlack']").unwrap();
+
+        let mut results: Value = json!([]);
+
+        for element in document.select(&selector) {
+            let text = element.text().collect::<String>();
+            let link = self.absolute_url(element.value().attr("href").unwrap());
+
+            results.as_array_mut().unwrap().push(json!({
+                "title": text,
+                "link": link,
+            }));
+        }
+
+        Ok(results)
+    }
+
+    pub async fn download(&self, url: &str) -> Result<Value, Error> {
+        let res = self.client.get(url).send().await?.text().await?;
+
+        let document = Html::parse_document(&res);
+
+        let table_row_selector = Selector::parse("div[class='table-row headerFont']").unwrap();
+        let table_head_selector =
+            Selector::parse("div[class='table-cell rowheight addseparator expand pad dowrap']")
+                .unwrap();
+        let span_apkm_badge_selector = Selector::parse("span[class='apkm-badge']").unwrap();
+        let a_accent_color_download_button_selector =
+            Selector::parse("a[class='accent_color']").unwrap();
+        let mut results: Value = json!([]);
+
+        for table_row_element in document.select(&table_row_selector) {
+            for table_head_element in table_row_element.select(&table_head_selector) {
+                let badge_text = table_head_element
+                    .select(&span_apkm_badge_selector)
+                    .next()
+                    .map(|element| element.text().collect::<String>())
+                    .unwrap_or_default();
+
+                let anchor_elem = table_head_element
+                    .select(&a_accent_color_download_button_selector)
+                    .next()
+                    .unwrap();
+                
+                let version = anchor_elem.text().collect::<String>().trim().to_string();
+                let download_link =
+                    self.host.to_string() + anchor_elem.value().attr("href").unwrap();
+                
+                println!("{:?}", json!({
+                    "version": version,
+                    "download_link": download_link,
+                    "type": badge_text,
+                }));
+
+                results.as_array_mut().unwrap().push(json!({
+                    "version": version,
+                    "download_link": download_link,
+                    "type": badge_text,
+                }));
+            }
+        }
+        Ok(results)
     }
 
     // ... other methods here ...
