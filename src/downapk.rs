@@ -107,24 +107,25 @@ impl ApkMirror {
 
                 let anchor_elem = table_head_element
                     .select(&a_accent_color_download_button_selector)
-                    .next()
-                    .unwrap();
+                    .next();
                
-                let version = anchor_elem.text().collect::<String>().trim().to_string();
-                let download_link =
-                    self.host.to_string() + anchor_elem.value().attr("href").unwrap();
-                
-                println!("{:?}", json!({
-                    "version": version,
-                    "download_link": download_link,
-                    "type": badge_text,
-                }));
+                let version = match anchor_elem {
+                    Some(anchor_elem) => anchor_elem.text().collect::<String>().trim().to_string(),
+                    None => continue,
+                };
 
-                results.as_array_mut().unwrap().push(json!({
-                    "version": version,
-                    "download_link": download_link,
-                    "type": badge_text,
-                }));
+                let download_link = match anchor_elem {
+                    Some(anchor_elem) => self.host.to_string() + anchor_elem.value().attr("href").unwrap(),
+                    None => continue,
+                };
+
+                if badge_text != "" && version != "" && download_link != "" {
+                    results.as_array_mut().unwrap().push(json!({
+                        "version": version,
+                        "download_link": download_link,
+                        "type": badge_text,
+                    }));
+                }
             }
         }
         Ok(results)
