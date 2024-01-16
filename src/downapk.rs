@@ -38,7 +38,7 @@ impl HttpRequester {
     }
 
     pub async fn index(&self) -> Result<String, Error> {
-        let url = String::from("http://www.apkmirror.com/");
+        let url = "http://www.apkmirror.com/".to_string();
         let res = self.client.get(&url).send().await?.text().await?;
         Ok(res)
     }
