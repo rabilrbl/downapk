@@ -108,14 +108,16 @@ impl ApkMirror {
                 let anchor_elem = table_head_element
                     .select(&a_accent_color_download_button_selector)
                     .next();
-               
+
                 let version = match anchor_elem {
                     Some(anchor_elem) => anchor_elem.text().collect::<String>().trim().to_string(),
                     None => continue,
                 };
 
                 let download_link = match anchor_elem {
-                    Some(anchor_elem) => self.host.to_string() + anchor_elem.value().attr("href").unwrap(),
+                    Some(anchor_elem) => {
+                        self.host.to_string() + anchor_elem.value().attr("href").unwrap()
+                    }
                     None => continue,
                 };
 
