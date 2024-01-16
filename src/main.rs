@@ -5,7 +5,13 @@ use downapk::ApkMirror;
 #[tokio::main]
 async fn main() {
     let downapk = ApkMirror::new().await;
-    let result = downapk.search("com.google.android.youtube").await;
+
+    // take input from user
+    println!("Enter package name");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input).unwrap();
+
+    let result = downapk.search(&input).await;
 
     match result {
         Ok(result) => {
