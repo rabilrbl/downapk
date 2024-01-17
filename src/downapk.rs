@@ -132,10 +132,10 @@ impl ApkMirror {
 
     pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
         println!("Searching for {}", search_query);
-        let url = format!(
-            "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s={}",
+        let url = self.absolute_url(&format!(
+            "/?post_type=app_release&searchtype=apk&s={}",
             search_query
-        );
+        ));
         
         Ok(self.extract_root_links(&url).await?)
     }
@@ -174,7 +174,7 @@ impl ApkMirror {
 
                 let download_link = match anchor_elem {
                     Some(anchor_elem) => {
-                        self.host.to_string() + anchor_elem.value().attr("href").unwrap()
+                        self.absolute_url(anchor_elem.value().attr("href").unwrap())
                     }
                     None => continue,
                 };
