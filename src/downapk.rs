@@ -35,10 +35,7 @@ impl ApkMirror {
             HeaderValue::from_static("cf.vojtechh.apkmirror"),
         );
 
-        let client = Client::builder()
-            .default_headers(headers)
-            .build()
-            .unwrap();
+        let client = Client::builder().default_headers(headers).build().unwrap();
 
         println!("Heading to apkmirror.com for valid cookies");
         let url = "https://www.apkmirror.com/".to_string();
@@ -87,7 +84,6 @@ impl ApkMirror {
                 let link = element.select(&link_selector).next();
                 let info = element.select(&info_selector).next();
 
-
                 let text = match link {
                     Some(link) => link.text().collect::<String>(),
                     None => continue,
@@ -105,7 +101,13 @@ impl ApkMirror {
                             let value = element.select(&info_value_selector).next();
 
                             let name = match name {
-                                Some(name) => name.text().collect::<String>().trim().strip_suffix(":").unwrap().to_string(),
+                                Some(name) => name
+                                    .text()
+                                    .collect::<String>()
+                                    .trim()
+                                    .strip_suffix(":")
+                                    .unwrap()
+                                    .to_string(),
                                 None => continue,
                             };
 
@@ -116,7 +118,7 @@ impl ApkMirror {
 
                             temp_result[name] = Value::String(value);
                         }
-                    },
+                    }
                     None => continue,
                 };
 
