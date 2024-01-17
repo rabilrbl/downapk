@@ -7,7 +7,6 @@ description = "Program to download APKs of given Android package"
 homepage = "https://github.com/rabilrbl/downapk"
 keywords = ["apk", "android", "download", "cli"]
 license = "MIT"
-license-file = "LICENSE"
 readme = "README.md"
 repository = "https://github.com/rabilrbl/downapk"
 
