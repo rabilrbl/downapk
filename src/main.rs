@@ -1,7 +1,7 @@
 mod downapk;
 
 use clap::Parser;
-use downapk::ApkMirror;
+use downapk::{ApkMirror, download_file};
 use serde_json::Value;
 
 /// Program to download APKs of given Android package ID
@@ -13,8 +13,8 @@ struct Args {
     package_id: String,
 
     /// Optional: Output file name
-    #[arg(short, long, default_value_t = String::from("output.apk"))]
-    output_file_name: String,
+    #[arg(short, long, default_value_t = String::from("downloads"))]
+    output_dir: String,
 
     /// Optional: Architecture
     /// Possible values: arm64-v8a, armeabi-v7a, x86, x86_64, universal, all
@@ -44,7 +44,7 @@ async fn main() {
     let apkmirror = ApkMirror::new().await;
 
     let package_id = args.package_id;
-    // let output_file_name = args.output_file_name;
+    let output_dir = args.output_dir;
     let arch = match args.arch.as_str() {
         "all" | "ALL" => None,
         _ => Some(args.arch.as_str()),
@@ -91,10 +91,18 @@ async fn main() {
 
     match download_result {
         Ok(download_result) => {
-            println!("{}", download_result);
+            let downlinks: &Vec<Value>= download_result.as_array().unwrap();
+            match download_file(downlinks, &package_id,&output_dir).await {
+                Ok(_) => {
+                    println!("Downloaded APKs to {}", output_dir);
+                }
+                Err(err) => {
+                    panic!("Error: {}", err);
+                }
+            }
         }
         Err(err) => {
-            println!("{}", err);
+            panic!("Error: {}", err);
         }
     }
 }
