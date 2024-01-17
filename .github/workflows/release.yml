@@ -56,4 +56,4 @@ jobs:
         file: target/${{ matrix.target }}/release/${{ steps.filename.outputs.filename }}
         asset_name: ${{ matrix.target }}-${{ steps.filename.outputs.filename }}
         tag: ${{ github.ref }}
-        file_glob: true
+        file_glob: false
