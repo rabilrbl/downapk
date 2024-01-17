@@ -34,15 +34,6 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
-    - name: Prepare binary filename
-      id: filename
-      run: |
-       if [ ${{ matrix.target }} = "x86_64-pc-windows-msvc" ]; then
-         echo "filename=downapk.exe" >> $GITHUB_OUTPUT
-       else
-         echo "filename=downapk" >> $GITHUB_OUTPUT
-       fi
-
     - name: Add target
       run: rustup target add ${{ matrix.target }}
 
@@ -51,9 +42,20 @@ jobs:
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
+      if: contains(matrix.target, 'windows') == false
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/${{ steps.filename.outputs.filename }}
-        asset_name: ${{ matrix.target }}-${{ steps.filename.outputs.filename }}
+        file: target/${{ matrix.target }}/release/downapk
+        asset_name: downapk-${{ matrix.target }}
+        tag: ${{ github.ref }}
+        file_glob: false
+
+    - name: Upload binaries to release
+      uses: svenstaro/upload-release-action@v2
+      if: contains(matrix.target, 'windows') == true
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: target/${{ matrix.target }}/release/downapk.exe
+        asset_name: downapk-${{ matrix.target }}.exe
         tag: ${{ github.ref }}
         file_glob: false
