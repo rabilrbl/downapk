@@ -4,19 +4,19 @@ use downapk::ApkMirror;
 
 #[tokio::main]
 async fn main() {
-    let downapk = ApkMirror::new().await;
+    let apkmirror = ApkMirror::new().await;
 
     // take input from user
     println!("Enter package name");
     let mut input = String::new();
     std::io::stdin().read_line(&mut input).unwrap();
 
-    let result = downapk.search(&input).await;
+    let result = apkmirror.search(&input).await;
 
     match result {
         Ok(result) => {
             let download_url = result[0]["link"].as_str().unwrap();
-            let download_result = downapk.download(download_url).await;
+            let download_result = apkmirror.download(download_url).await;
 
             match download_result {
                 Ok(download_result) => {

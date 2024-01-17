@@ -58,13 +58,10 @@ impl ApkMirror {
         }
     }
 
-    pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
-        println!("Searching for {}", search_query);
-        let url = format!(
-            "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s={}",
-            search_query
-        );
-        let res = self.client.get(&url).send().await?.text().await?;
+    pub async fn extract_root_links(&self, url: &str) -> Result<Value, Error> {
+        println!("Trying to get all apk pages from {}", url);
+
+        let res = self.client.get(url).send().await?.text().await?;
 
         let document = Html::parse_document(&res);
 
@@ -124,14 +121,23 @@ impl ApkMirror {
 
                 temp_result["title"] = Value::String(text);
                 temp_result["link"] = Value::String(link);
-
-                println!("{:?}", temp_result);
+                
                 results.as_array_mut().unwrap().push(temp_result);
             }
         }
-        println!("Finished search for {}", search_query);
+        println!("Finished collecting all apk pages");
 
         Ok(results)
+    }
+
+    pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
+        println!("Searching for {}", search_query);
+        let url = format!(
+            "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s={}",
+            search_query
+        );
+        
+        Ok(self.extract_root_links(&url).await?)
     }
 
     pub async fn download(&self, url: &str) -> Result<Value, Error> {
