@@ -1,7 +1,7 @@
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
 use scraper::{Html, Selector};
-use serde_json::{json, Value};
+use serde_json::{json, json_internal, Value};
 
 pub struct ApkMirror {
     client: Client,
@@ -144,7 +144,7 @@ impl ApkMirror {
         let table_head_selector =
             Selector::parse("div[class='table-cell rowheight addseparator expand pad dowrap']")
                 .unwrap();
-        let span_apkm_badge_selector = Selector::parse("span[class='apkm-badge']").unwrap();
+        let span_apkm_badge_selector = Selector::parse("span.apkm-badge").unwrap();
         let a_accent_color_download_button_selector =
             Selector::parse("a[class='accent_color']").unwrap();
         let mut results: Value = json!([]);
@@ -175,13 +175,12 @@ impl ApkMirror {
 
                 if badge_text != "" && version != "" && download_link != "" {
                     println!("Found version: {}", version);
-                    results.as_array_mut().unwrap().push(json!({
-                        "version": version,
-                        "download_link": match self.download_link(&download_link).await {
-                            Ok(download_link) => download_link,
-                            Err(_) => panic!("Something went wrong while getting download link"),
+                    results.as_array_mut().unwrap().push(json_internal!({
+                        "version":version,
+                        "download_link":match self.download_link(&download_link).await {
+                            Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
                         },
-                        "type": badge_text,
+                        "type":badge_text,
                     }));
                 }
             }
