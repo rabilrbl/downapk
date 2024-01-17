@@ -16,15 +16,19 @@ struct Args {
     output_file_name: String,
 
     /// Optional: Architecture
-    /// Possible values: arm64-v8a, armeabi-v7a, x86, x86_64, all
+    /// Possible values: arm64-v8a, armeabi-v7a, x86, x86_64, universal, all
     #[arg(short, long, default_value_t = String::from("all"))]
     arch: String,
 
     /// Optional: Version code
-    /// If not specified, the latest version will be downloaded
-    /// If specified, the latest version will be downloaded if the specified version is not found
+    /// Possible values: latest, x.x.x (e.g. 1.0.0)
     #[arg(short, long, default_value_t = String::from("latest"))]
     version_code: String,
+
+    /// Optional: Type of APK
+    /// Possible values: bundle, apk, all
+    #[arg(short, long, default_value_t = String::from("all"))]
+    type_: String,
 }
 
 #[tokio::main]
