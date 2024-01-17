@@ -251,7 +251,7 @@ name = "downapk"
 version = "0.1.0"
 dependencies = [
  "clap",
- "openssl-sys",
+ "openssl",
  "reqwest",
  "scraper",
  "serde_json",
