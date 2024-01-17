@@ -158,7 +158,7 @@ impl ApkMirror {
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
-    pub async fn download(&self, url: &str) -> Result<Value, Error> {
+    pub async fn download_by_type(&self, url: &str, type_: Option<&str>) -> Result<Value, Error> {
         println!("Trying to get all downloadable links from {}", url);
         let res = self.client.get(url).send().await?.text().await?;
 
@@ -198,6 +198,11 @@ impl ApkMirror {
                 };
 
                 if badge_text != "" && version != "" && download_link != "" {
+                    if let Some(type_) = type_ {
+                        if type_ != badge_text {
+                            continue;
+                        }
+                    }
                     println!("Found version: {}", version);
                     results.as_array_mut().unwrap().push(json_internal!({
                         "version":version,
@@ -210,6 +215,10 @@ impl ApkMirror {
             }
         }
         Ok(results)
+    }
+
+    pub async fn download(&self, url: &str) -> Result<Value, Error> {
+        Ok(self.download_by_type(url, None).await?)
     }
 
     async fn download_link(&self, url: &str) -> Result<String, Error> {

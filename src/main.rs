@@ -41,6 +41,12 @@ async fn main() {
     let package_id = args.package_id;
     // let output_file_name = args.output_file_name;
     // let arch = args.arch;
+    let type_: Option<&str> = match args.type_.as_str() {
+        "bundle" | "BUNDLE" | "split" => Some("BUNDLE"),
+        "apk" | "APK" => Some("APK"),
+        _ => None,
+    };
+
     let version_code = args.version_code;
 
     match version_code.as_str() {
@@ -74,7 +80,7 @@ async fn main() {
             match result {
                 Ok(result) => {
                     let download_url = result[0]["link"].as_str().unwrap();
-                    let download_result = apkmirror.download(download_url).await;
+                    let download_result = apkmirror.download_by_type(download_url, type_).await;
 
                     match download_result {
                         Ok(download_result) => {
