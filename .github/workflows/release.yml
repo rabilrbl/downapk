@@ -39,6 +39,10 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
+    - name: Install linux dependencies
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt install libssl-dev
+
     - name: Add target
       run: rustup target add ${{ matrix.target }}
 
