@@ -60,7 +60,7 @@ jobs:
         CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
         CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
 
-    - name: Upload binaries to release
+    - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
       if: contains(matrix.target, 'windows') == false
       with:
@@ -70,7 +70,7 @@ jobs:
         tag: ${{ github.ref }}
         file_glob: false
 
-    - name: Upload binaries to release
+    - name: Upload windows binaries to release
       uses: svenstaro/upload-release-action@v2
       if: contains(matrix.target, 'windows') == true
       with:
