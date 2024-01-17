@@ -58,7 +58,11 @@ impl ApkMirror {
         }
     }
 
-    pub async fn extract_root_links(&self, url: &str, version: Option<&str>) -> Result<Value, Error> {
+    pub async fn extract_root_links(
+        &self,
+        url: &str,
+        version: Option<&str>,
+    ) -> Result<Value, Error> {
         println!("Trying to get all apk pages from {}", url);
 
         let res = self.client.get(url).send().await?.text().await?;
@@ -127,7 +131,7 @@ impl ApkMirror {
 
                 temp_result["title"] = Value::String(text);
                 temp_result["link"] = Value::String(link);
-                
+
                 results.as_array_mut().unwrap().push(temp_result);
             }
         }
@@ -143,22 +147,31 @@ impl ApkMirror {
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
         ));
-        
+
         Ok(self.extract_root_links(&url, None).await?)
     }
 
-    pub async fn search_by_version(&self, search_query: &str, version: &str) -> Result<Value, Error> {
+    pub async fn search_by_version(
+        &self,
+        search_query: &str,
+        version: &str,
+    ) -> Result<Value, Error> {
         println!("Searching for {} with version {}", search_query, version);
 
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
         ));
-        
+
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
-    pub async fn download_by_type(&self, url: &str, type_: Option<&str>) -> Result<Value, Error> {
+    pub async fn download_by_type_arch(
+        &self,
+        url: &str,
+        type_: Option<&str>,
+        arch: Option<&str>,
+    ) -> Result<Value, Error> {
         println!("Trying to get all downloadable links from {}", url);
         let res = self.client.get(url).send().await?.text().await?;
 
@@ -171,6 +184,7 @@ impl ApkMirror {
         let span_apkm_badge_selector = Selector::parse("span.apkm-badge").unwrap();
         let a_accent_color_download_button_selector =
             Selector::parse("a[class='accent_color']").unwrap();
+        let metadata_selector = &Selector::parse("div").unwrap();
         let mut results: Value = json!([]);
 
         for table_row_element in document.select(&table_row_selector) {
@@ -203,13 +217,46 @@ impl ApkMirror {
                             continue;
                         }
                     }
-                    println!("Found version: {}", version);
+                    let archstr = table_row_element
+                        .select(metadata_selector)
+                        .nth(1)
+                        .unwrap()
+                        .text()
+                        .collect::<String>()
+                        .trim()
+                        .to_string();
+                    if let Some(arch) = arch {
+                        if arch != archstr {
+                            println!("Skipping version {} because arch is not {}", version, arch);
+                            continue;
+                        }
+                    }
+                    let min_version = table_row_element
+                        .select(metadata_selector)
+                        .nth(2)
+                        .unwrap()
+                        .text()
+                        .collect::<String>()
+                        .trim()
+                        .to_string();
+                    let screen_dpi = table_row_element
+                        .select(metadata_selector)
+                        .nth(3)
+                        .unwrap()
+                        .text()
+                        .collect::<String>()
+                        .trim()
+                        .to_string();
+                    println!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, archstr, min_version, screen_dpi);
                     results.as_array_mut().unwrap().push(json_internal!({
                         "version":version,
                         "download_link":match self.download_link(&download_link).await {
                             Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
                         },
                         "type":badge_text,
+                        "arch":archstr,
+                        "min_version":min_version,
+                        "screen_dpi":screen_dpi,
                     }));
                 }
             }
@@ -217,8 +264,16 @@ impl ApkMirror {
         Ok(results)
     }
 
+    pub async fn _download_by_arch(&self, url: &str, arch: Option<&str>) -> Result<Value, Error> {
+        Ok(self.download_by_type_arch(url, None, arch).await?)
+    }
+
+    pub async fn _download_by_type(&self, url: &str, type_: Option<&str>) -> Result<Value, Error> {
+        Ok(self.download_by_type_arch(url, type_, None).await?)
+    }
+
     pub async fn download(&self, url: &str) -> Result<Value, Error> {
-        Ok(self.download_by_type(url, None).await?)
+        Ok(self.download_by_type_arch(url, None, None).await?)
     }
 
     async fn download_link(&self, url: &str) -> Result<String, Error> {
