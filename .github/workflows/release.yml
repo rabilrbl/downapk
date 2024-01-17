@@ -35,7 +35,7 @@ jobs:
 
     - name: Install dependencies for aarch64
       if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64') == true
-      run: sudo apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
+      run: sudo apt-get update -y && sudo apt-get install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
     - name: Install Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
