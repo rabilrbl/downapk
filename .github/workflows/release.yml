@@ -42,6 +42,7 @@ jobs:
     - name: Install container deps
       if: matrix.container != null
       run: |
+        apt update &amp;&amp; apt upgrade -y 
         apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
     - name: arm64 container setup
