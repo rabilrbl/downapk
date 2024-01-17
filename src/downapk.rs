@@ -166,11 +166,12 @@ impl ApkMirror {
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
-    pub async fn download_by_type_arch(
+    pub async fn download_by_specifics(
         &self,
         url: &str,
         type_: Option<&str>,
         arch: Option<&str>,
+        dpi: Option<&str>,
     ) -> Result<Value, Error> {
         println!("Trying to get all downloadable links from {}", url);
         let res = self.client.get(url).send().await?.text().await?;
@@ -214,6 +215,7 @@ impl ApkMirror {
                 if badge_text != "" && version != "" && download_link != "" {
                     if let Some(type_) = type_ {
                         if type_ != badge_text {
+                            println!("Skipping type {}", badge_text);
                             continue;
                         }
                     }
@@ -227,21 +229,27 @@ impl ApkMirror {
                         .to_string();
                     if let Some(arch) = arch {
                         if arch != archstr {
-                            println!("Skipping version {} because arch is not {}", version, arch);
+                            println!("Skipping arch {}", archstr);
+                            continue;
+                        }
+                    }
+                    let screen_dpi = table_row_element
+                        .select(metadata_selector)
+                        .nth(3)
+                        .unwrap()
+                        .text()
+                        .collect::<String>()
+                        .trim()
+                        .to_string();
+                    if let Some(dpi) = dpi {
+                        if dpi != screen_dpi {
+                            println!("Skipping dpi {}", screen_dpi);
                             continue;
                         }
                     }
                     let min_version = table_row_element
                         .select(metadata_selector)
                         .nth(2)
-                        .unwrap()
-                        .text()
-                        .collect::<String>()
-                        .trim()
-                        .to_string();
-                    let screen_dpi = table_row_element
-                        .select(metadata_selector)
-                        .nth(3)
                         .unwrap()
                         .text()
                         .collect::<String>()
@@ -265,15 +273,19 @@ impl ApkMirror {
     }
 
     pub async fn _download_by_arch(&self, url: &str, arch: Option<&str>) -> Result<Value, Error> {
-        Ok(self.download_by_type_arch(url, None, arch).await?)
+        Ok(self.download_by_specifics(url, None, arch, None).await?)
     }
 
     pub async fn _download_by_type(&self, url: &str, type_: Option<&str>) -> Result<Value, Error> {
-        Ok(self.download_by_type_arch(url, type_, None).await?)
+        Ok(self.download_by_specifics(url, type_, None, None).await?)
     }
 
-    pub async fn download(&self, url: &str) -> Result<Value, Error> {
-        Ok(self.download_by_type_arch(url, None, None).await?)
+    pub async fn _download_by_dpi(&self, url: &str, dpi: Option<&str>) -> Result<Value, Error> {
+        Ok(self.download_by_specifics(url, None, None, dpi).await?)
+    }
+
+    pub async fn _download(&self, url: &str) -> Result<Value, Error> {
+        Ok(self.download_by_specifics(url, None, None, None).await?)
     }
 
     async fn download_link(&self, url: &str) -> Result<String, Error> {

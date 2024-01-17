@@ -2,6 +2,7 @@ mod downapk;
 
 use clap::Parser;
 use downapk::ApkMirror;
+use serde_json::Value;
 
 /// Program to download APKs of given Android package ID
 #[derive(Parser, Debug)]
@@ -29,11 +30,15 @@ struct Args {
     /// Possible values: bundle, apk, all
     #[arg(short, long, default_value_t = String::from("all"))]
     type_: String,
+
+    /// Optional: Screen DPI
+    /// Possible values: nodpi, 320, ..., all
+    #[arg(short, long, default_value_t = String::from("all"))]
+    dpi: String,
 }
 
 #[tokio::main]
 async fn main() {
-
     let args = Args::parse();
 
     let apkmirror = ApkMirror::new().await;
@@ -49,56 +54,47 @@ async fn main() {
         "apk" | "APK" => Some("APK"),
         _ => None,
     };
+    let dpi = match args.dpi.as_str() {
+        "all" | "ALL" => None,
+        _ => Some(args.dpi.as_str()),
+    };
 
     let version_code = args.version_code;
-
-    match version_code.as_str() {
+    let results: Value = match version_code.as_str() {
         "latest" => {
             let result = apkmirror.search(&package_id).await;
-
             match result {
-                Ok(result) => {
-                    let download_url = result[0]["link"].as_str().unwrap();
-                    let download_result = apkmirror.download(download_url).await;
-
-                    match download_result {
-                        Ok(download_result) => {
-                            println!("{}", download_result);
-                        }
-                        Err(err) => {
-                            println!("{}", err);
-                        }
-                    }
-                }
-                
+                Ok(result) => result,
                 Err(err) => {
-                    println!("{}", err);
+                    panic!("Error: {}", err);
                 }
             }
         }
 
         _ => {
-            let result = apkmirror.search_by_version(&package_id, &version_code).await;
-
+            let result = apkmirror
+                .search_by_version(&package_id, &version_code)
+                .await;
             match result {
-                Ok(result) => {
-                    let download_url = result[0]["link"].as_str().unwrap();
-                    let download_result = apkmirror.download_by_type_arch(download_url, type_, arch).await;
-
-                    match download_result {
-                        Ok(download_result) => {
-                            println!("{}", download_result);
-                        }
-                        Err(err) => {
-                            println!("{}", err);
-                        }
-                    }
-                }
-                
+                Ok(result) => result,
                 Err(err) => {
-                    println!("{}", err);
+                    panic!("Error: {}", err);
                 }
             }
+        }
+    };
+
+    let download_url = results[0]["link"].as_str().unwrap();
+    let download_result = apkmirror
+        .download_by_specifics(download_url, type_, arch, dpi)
+        .await;
+
+    match download_result {
+        Ok(download_result) => {
+            println!("{}", download_result);
+        }
+        Err(err) => {
+            println!("{}", err);
         }
     }
 }
