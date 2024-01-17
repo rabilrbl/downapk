@@ -35,7 +35,10 @@ impl ApkMirror {
             HeaderValue::from_static("cf.vojtechh.apkmirror"),
         );
 
-        let client = Client::builder().default_headers(headers).build().unwrap();
+        let client = Client::builder()
+            .default_headers(headers)
+            .build()
+            .unwrap();
 
         println!("Heading to apkmirror.com for valid cookies");
         let url = "https://www.apkmirror.com/".to_string();
@@ -167,7 +170,7 @@ impl ApkMirror {
                 match final_download_link {
                     Some(final_download_link) => {
                         let final_download_link =
-                        self.absolute_url(final_download_link.value().attr("href").unwrap());
+                            self.absolute_url(final_download_link.value().attr("href").unwrap());
                         println!("Found final download link: {}", final_download_link);
                         final_download_link.to_string()
                     }
