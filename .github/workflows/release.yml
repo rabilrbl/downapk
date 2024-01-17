@@ -27,7 +27,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             filename: downapk-x86_64-windows.exe
           - os: ubuntu-latest
-            container: rust:nightly-alpine
+            container: rustlang/rust:nightly-alpine
             target: aarch64-unknown-linux-gnu
             filename: downapk-aarch64-linux
           - os: macos-latest
@@ -47,7 +47,7 @@ jobs:
         target: ${{ matrix.target }}
 
     - name: Install OpenSSL on Alpine container
-      if: matrix.container == 'rust:nightly-alpine'
+      if: matrix.container == 'rustlang/rust:nightly-alpine'
       run: |
         apk add --no-cache openssl openssl-dev
 
