@@ -45,15 +45,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y pkg-config libssl-dev
 
-    - name: Build for non-linux
-      if: matrix.os != 'ubuntu-latest'
-      run: cargo build --release --target ${{ matrix.target }}
+    - name: Install rust toolchain
+      run: |
+        rustup target add ${{ matrix.target }}
+        rustup toolchain install nightly-${{ matrix.target }}
+      
 
-    - name: Build for linux
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build
       run: cargo build --release --target ${{ matrix.target }}
-      env:
-        OPENSSL_DIR: /usr/bin/openssl
 
     - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
