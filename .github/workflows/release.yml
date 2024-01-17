@@ -39,9 +39,12 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
+    - name: Install Cargo Binstall
+      uses: cargo-bins/cargo-binstall@main
+
     - name: Install cross crate
       run: |
-       cargo install -f cross
+       cargo binstall cross
 
     - name: Build for non-aarch64 linux
       run: cross build --release --target ${{ matrix.target }}
