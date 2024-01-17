@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            container: rust:latest
+            container: null
             target: x86_64-unknown-linux-gnu
             filename: downapk-x86_64-linux
           - os: macos-latest
@@ -42,25 +42,32 @@ jobs:
     - name: Install container deps
       if: matrix.container != null
       run: |
-        apt-get update
-        apt-get install -y --no-install-recommends \
-          ca-certificates \
-          curl \
-          file \
-          gcc \
-          libc6-dev \
-          libssl-dev \
-          pkg-config \
-          xz-utils
+        apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
+
+    - name: arm64 container setup
+      if: matrix.container != null
+      run: |
+        rustup target add aarch64-unknown-linux-gnu 
+        rustup target add stable-aarch64-unknown-linux-gnu
 
     - name: Install Rust
+      if: matrix.container == null
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
         target: ${{ matrix.target }}
 
-    - name: Build
+    - name: Build for ${{ matrix.target }}
+      if: matrix.container == null
       run: cargo build --release --target ${{ matrix.target }}
+
+    - name: Build for arm64 container
+      if: matrix.container != null
+      run: cargo build --release --target aarch64-unknown-linux-gnu
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
 
     - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
