@@ -51,7 +51,9 @@ jobs:
 
     - name: Build for linux
       if: matrix.os == 'ubuntu-latest'
-      run: cargo build --release --target ${{ matrix.target }} --features openssl-vendored
+      run: cargo build --release --target ${{ matrix.target }}
+      env:
+        OPENSSL_DIR: /usr/bin/openssl
 
     - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
