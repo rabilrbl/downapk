@@ -45,14 +45,7 @@ jobs:
         apt update && apt upgrade -y 
         apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
-    - name: arm64 container setup
-      if: matrix.container != null
-      run: |
-        rustup target add aarch64-unknown-linux-gnu 
-        rustup target add stable-aarch64-unknown-linux-gnu
-
     - name: Install Rust
-      if: matrix.container == null
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: nightly
