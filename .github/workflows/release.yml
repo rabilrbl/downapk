@@ -44,7 +44,7 @@ jobs:
 
     - name: Install cross crate
       run: |
-       cargo binstall cross
+       cargo binstall cross --no-confirm
 
     - name: Build for non-aarch64 linux
       run: cross build --release --target ${{ matrix.target }}
