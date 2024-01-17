@@ -71,18 +71,61 @@ impl ApkMirror {
 
         let document = Html::parse_document(&res);
 
-        let selector = Selector::parse("a[class='fontBlack']").unwrap();
+        let list_widget_selector = Selector::parse("div.listWidget").unwrap();
+        let div_without_class_selector = Selector::parse("div:not([class])").unwrap();
+        let link_selector = Selector::parse("a[class='fontBlack']").unwrap();
+        let info_selector = Selector::parse("div.infoSlide.t-height").unwrap();
+        let paragraph_selector = Selector::parse("p").unwrap();
+        let info_name_selector = Selector::parse("span.infoSlide-name").unwrap();
+        let info_value_selector = Selector::parse("span.infoSlide-value").unwrap();
 
         let mut results: Value = json!([]);
 
-        for element in document.select(&selector) {
-            let text = element.text().collect::<String>();
-            let link = self.absolute_url(element.value().attr("href").unwrap());
+        for element in document.select(&list_widget_selector).take(1) {
+            for element in element.select(&div_without_class_selector) {
+                let mut temp_result = json!({});
+                let link = element.select(&link_selector).next();
+                let info = element.select(&info_selector).next();
 
-            results.as_array_mut().unwrap().push(json!({
-                "title": text,
-                "link": link,
-            }));
+
+                let text = match link {
+                    Some(link) => link.text().collect::<String>(),
+                    None => continue,
+                };
+
+                let link = match link {
+                    Some(link) => self.absolute_url(link.value().attr("href").unwrap()),
+                    None => continue,
+                };
+
+                match info {
+                    Some(info) => {
+                        for element in info.select(&paragraph_selector) {
+                            let name = element.select(&info_name_selector).next();
+                            let value = element.select(&info_value_selector).next();
+
+                            let name = match name {
+                                Some(name) => name.text().collect::<String>().trim().strip_suffix(":").unwrap().to_string(),
+                                None => continue,
+                            };
+
+                            let value = match value {
+                                Some(value) => value.text().collect::<String>().trim().to_string(),
+                                None => continue,
+                            };
+
+                            temp_result[name] = Value::String(value);
+                        }
+                    },
+                    None => continue,
+                };
+
+                temp_result["title"] = Value::String(text);
+                temp_result["link"] = Value::String(link);
+
+                println!("{:?}", temp_result);
+                results.as_array_mut().unwrap().push(temp_result);
+            }
         }
         println!("Finished search for {}", search_query);
 
