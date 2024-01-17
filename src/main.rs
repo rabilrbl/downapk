@@ -32,7 +32,7 @@ struct Args {
     type_: String,
 
     /// Optional: Screen DPI
-    /// Possible values: nodpi, 320, ..., all
+    /// Possible values: nodpi, 120-320, ..., all
     #[arg(short, long, default_value_t = String::from("all"))]
     dpi: String,
 }
