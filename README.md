@@ -34,14 +34,14 @@ downapk --package-id com.google.android.youtube --version-code 1.0.0
 downapk --package-id com.google.android.youtube --type apk
 ```
 
-# License
+## License
 
 MIT License. See [LICENSE](LICENSE) file for details.
 
-# Author
+## Author
 
 [Mohammed Rabil](https://github.com/rabilrbl)
 
-# Contributors
+## Contributors
 
 [![Contributors](https://contributors-img.web.app/image?repo=rabilrbl/downapk)](https://github.com/rabilrbl/downapk/graphs/contributors)
