@@ -31,7 +31,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Install dependencies for aarch64
       if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64') == true
@@ -48,15 +48,17 @@ jobs:
        rustup target add ${{ matrix.target }}
        rustup toolchain install stable-${{ matrix.target }}
 
-    - name: Additional configs for aarch64
-      if: matrix.os == 'ubuntu-latest' && contains(matrix.target, 'aarch64') == true
-      run: |
-        export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc 
-        export CC_aarch64_unknown_linux_gnu=aarch64-linux-gnu-gcc
-        export CXX_aarch64_unknown_linux_gnu=aarch64-linux-gnu-g++
+    - name: Build
+      if: matrix.target != 'aarch64-unknown-linux-gnu'
+      run: cargo build --release --target ${{ matrix.target }}
 
     - name: Build
+      if: matrix.target == 'aarch64-unknown-linux-gnu'
       run: cargo build --release --target ${{ matrix.target }}
+      env:
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
 
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
