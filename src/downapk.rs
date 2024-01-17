@@ -58,7 +58,7 @@ impl ApkMirror {
         }
     }
 
-    pub async fn extract_root_links(&self, url: &str) -> Result<Value, Error> {
+    pub async fn extract_root_links(&self, url: &str, version: Option<&str>) -> Result<Value, Error> {
         println!("Trying to get all apk pages from {}", url);
 
         let res = self.client.get(url).send().await?.text().await?;
@@ -119,6 +119,12 @@ impl ApkMirror {
                     None => continue,
                 };
 
+                if let Some(version) = version {
+                    if temp_result["Version"] != Value::String(version.to_string()) {
+                        continue;
+                    }
+                }
+
                 temp_result["title"] = Value::String(text);
                 temp_result["link"] = Value::String(link);
                 
@@ -132,12 +138,24 @@ impl ApkMirror {
 
     pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
         println!("Searching for {}", search_query);
+
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
         ));
         
-        Ok(self.extract_root_links(&url).await?)
+        Ok(self.extract_root_links(&url, None).await?)
+    }
+
+    pub async fn search_by_version(&self, search_query: &str, version: &str) -> Result<Value, Error> {
+        println!("Searching for {} with version {}", search_query, version);
+
+        let url = self.absolute_url(&format!(
+            "/?post_type=app_release&searchtype=apk&s={}",
+            search_query
+        ));
+        
+        Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
     pub async fn download(&self, url: &str) -> Result<Value, Error> {
