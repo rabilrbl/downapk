@@ -41,7 +41,7 @@ jobs:
 
     - name: Install linux dependencies
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt install libssl-dev
+      run: sudo apt install openssl libssl-dev libudev-dev librust-openssl-sys-dev
 
     - name: Add target
       run: rustup target add ${{ matrix.target }}
