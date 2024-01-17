@@ -39,6 +39,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Install container deps
+      if: matrix.container != null
+      run: |
+        apt-get update
+        apt-get install -y --no-install-recommends \
+          ca-certificates \
+          curl \
+          file \
+          gcc \
+          libc6-dev \
+          libssl-dev \
+          pkg-config \
+          xz-utils
+
     - name: Install Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
