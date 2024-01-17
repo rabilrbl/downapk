@@ -27,7 +27,7 @@ jobs:
             target: x86_64-pc-windows-msvc
             filename: downapk-x86_64-windows.exe
           - os: ubuntu-latest
-            container: rust:latest
+            container: rust:nightly-alpine
             target: aarch64-unknown-linux-gnu
             filename: downapk-aarch64-linux
           - os: macos-latest
@@ -45,11 +45,10 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
-    - name: Install OpenSSL
-      if: matrix.os == 'fedora-latest'
+    - name: Install OpenSSL on Alpine container
+      if: matrix.container == 'rust:nightly-alpine'
       run: |
-        sudo dnf update
-        sudo dnf install openssl-devel
+        apk add --no-cache openssl openssl-dev
 
     - name: Install rust toolchain
       run: |
