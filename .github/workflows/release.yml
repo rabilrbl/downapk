@@ -8,24 +8,30 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     permissions:
       contents: write
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
+            container: rust:latest
             target: x86_64-unknown-linux-gnu
             filename: downapk-x86_64-linux
           - os: macos-latest
+            container: null
             target: x86_64-apple-darwin
             filename: downapk-x86_64-darwin
           - os: windows-latest
+            container: null
             target: x86_64-pc-windows-msvc
             filename: downapk-x86_64-windows.exe
-          - os: fedora-latest
+          - os: ubuntu-latest
+            container: rust:latest
             target: aarch64-unknown-linux-gnu
             filename: downapk-aarch64-linux
           - os: macos-latest
+            container: null
             target: aarch64-apple-darwin
             filename: downapk-aarch64-darwin
 
