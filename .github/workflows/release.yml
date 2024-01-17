@@ -45,15 +45,8 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y pkg-config libssl-dev
 
-    - name: Install Cargo Binstall
-      uses: cargo-bins/cargo-binstall@main
-
-    - name: Install cross crate
-      run: |
-       cargo binstall cross --no-confirm
-
     - name: Build for non-aarch64 linux
-      run: cross build --release --target ${{ matrix.target }}
+      run: cargo build --release --target ${{ matrix.target }}
 
     - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
