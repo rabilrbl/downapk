@@ -11,9 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: rust:latest
-      options: --user root
     permissions:
       contents: write
     strategy:
