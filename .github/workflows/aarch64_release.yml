@@ -30,10 +30,10 @@ jobs:
             toolchain: nightly
             target: ${{ matrix.target }}
 
-      - name: Setup for android toolchain
+      - name: Setup toolchain
         run: |
             rustup target add aarch64-unknown-linux-gnu
-            rustup toolchain install nightly-aarch64-linux-android
+            rustup toolchain install nightly-aarch64-unknown-linux-gnu
            
       - name: Install dependencies
         run: |
