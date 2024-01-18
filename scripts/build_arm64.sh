@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-apt-get install libssl-dev -y
-OPENSSL_PC_DIR=$(find /usr/ -name "openssl.pc")
-export PKG_CONFIG_PATH=$OPENSSL_PC_DIR:$PKG_CONFIG_PATH
+dpkg --add-architecture $CROSS_DEB_ARCH
+apt-get update && apt-get install --assume-yes libssl-dev:$CROSS_DEB_ARCH
