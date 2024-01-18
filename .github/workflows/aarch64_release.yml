@@ -20,6 +20,10 @@ jobs:
               filename: downapk-aarch64-linux
             - target: aarch64-linux-android
               filename: downapk-aarch64-android
+            - target: armv7-unknown-linux-gnueabihf
+              filename: downapk-armv7-linux
+            - target: armv7-linux-androideabi
+              filename: downapk-armv7-android
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
