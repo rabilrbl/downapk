@@ -7,6 +7,13 @@ use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 use core::time::Duration;
+use console::Emoji;
+
+static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
+static PAPER: Emoji<'_, '_> = Emoji("📃  ", "");
+static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
+static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
+static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 
 pub struct ApkMirror {
     client: Client,
@@ -50,7 +57,7 @@ impl ApkMirror {
 
         let pb = ProgressBar::new(40);
             pb.set_style(spinner_style.clone());
-            pb.set_prefix(format!("Initialise Cookies", ));
+            pb.set_prefix(format!(" {} Intialise", SPARKLE));
 
         pb.set_message("Heading to apkmirror.com for valid cookies");
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -92,7 +99,7 @@ impl ApkMirror {
     ) -> Result<Value, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
-        pb.set_prefix(format!("Extract Links", ));
+        pb.set_prefix(format!(" {} Extract Links", PAPER));
         pb.set_message("Extracting APK Links from");
 
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -192,7 +199,7 @@ impl ApkMirror {
     ) -> Result<Value, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
-        pb.set_prefix(format!("Search", ));
+        pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
         pb.set_message(format!("Searching for {} with version {}", search_query, version));
         pb.enable_steady_tick(Duration::from_millis(100));
 
@@ -213,7 +220,7 @@ impl ApkMirror {
     ) -> Result<Value, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
-        pb.set_prefix(format!("Download", ));
+        pb.set_prefix(format!(" {} Get file download links", TRUCK));
         pb.set_message(format!("Trying to get all download links from {}", url));
         pb.enable_steady_tick(Duration::from_millis(100));
         let res = self.client.get(url).send().await?.text().await?;
@@ -422,17 +429,17 @@ pub async fn download_file(
             .unwrap()
             .as_str()
             .unwrap();
-        println!("Downloading file from {}", url);
 
         let mut res = reqwest::get(url).await?;
         let total_size = res.content_length().ok_or("Failed to get content length").unwrap();
 
         let pb = ProgressBar::new(total_size);
+        pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
         pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
         
         let output_file = format!("{}_{}_{}_{}.apk", package_name, version, arch, dpi);
         let output_path = format!("{}/{}", output_dir, output_file);
-        pb.set_message(format!("Downloading file {}", output_file));
+        pb.set_message(format!("File {}", output_file));
         let mut file = File::create(output_path)
             .await
             .expect("Failed to create file");

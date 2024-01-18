@@ -264,6 +264,7 @@ name = "downapk"
 version = "0.1.6"
 dependencies = [
  "clap",
+ "console",
  "indicatif",
  "openssl",
  "reqwest",
