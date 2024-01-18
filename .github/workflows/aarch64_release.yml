@@ -1,4 +1,4 @@
-name: Build and Upload Rust Binaries
+name: Build for arm64
 
 on:
   release:

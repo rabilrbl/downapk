@@ -1,4 +1,4 @@
-name: Build and Upload Rust Binaries
+name: Build for all platforms
 
 on:
   release:
