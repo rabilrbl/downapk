@@ -32,6 +32,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Rust
+        run: |
+          rustup update --no-self-update stable
+          rustup component add --toolchainstable rustfmt rust-src
+          rustup default stable
+
       - name: Setup Cache
         uses: actions/cache@v4
         env:
