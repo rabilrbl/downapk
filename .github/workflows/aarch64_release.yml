@@ -37,6 +37,7 @@ jobs:
            
       - name: Install dependencies
         run: |
+            dnf groupinstall -y "Development Tools"
             dnf install -y openssl-devel gcc g++ gcc-c++-aarch64-linux-gnu gcc-aarch64-linux-gnu
 
       - name: Build for arm64 container
