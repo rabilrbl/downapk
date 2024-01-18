@@ -4,7 +4,6 @@ on:
   workflow_run:
     workflows:
       - "Build for common platforms"
-      - "Build for extra platforms"
     types: [completed]
   workflow_dispatch:
 
