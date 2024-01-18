@@ -41,7 +41,7 @@ impl ApkMirror {
 
         println!("Heading to apkmirror.com for valid cookies");
         let url = "https://www.apkmirror.com".to_string();
-        let res = client.get(&url).send().await.unwrap().text().await.unwrap();
+        let res = client.get(&(url.clone()+"/")).send().await.unwrap().text().await.unwrap();
 
         let document = Html::parse_document(&res);
 
