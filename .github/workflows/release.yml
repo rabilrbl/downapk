@@ -8,46 +8,27 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    container: ${{ matrix.container }}
     permissions:
       contents: write
     strategy:
       matrix:
         include:
           - os: ubuntu-latest
-            container: null
             target: x86_64-unknown-linux-gnu
             filename: downapk-x86_64-linux
           - os: macos-latest
-            container: null
             target: x86_64-apple-darwin
             filename: downapk-x86_64-darwin
           - os: windows-latest
-            container: null
             target: x86_64-pc-windows-msvc
             filename: downapk-x86_64-windows.exe
-          - os: ubuntu-latest
-            container: rust:latest
-            target: aarch64-unknown-linux-gnu
-            filename: downapk-aarch64-linux
-          - os: ubuntu-latest
-            container: rust:latest
-            target: aarch64-linux-android
-            filename: downapk-aarch64-android
           - os: macos-latest
-            container: null
             target: aarch64-apple-darwin
             filename: downapk-aarch64-darwin
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Install container deps
-      if: matrix.container != null
-      run: |
-        apt update && apt upgrade -y 
-        apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
     - name: Install Rust
       uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -56,16 +37,7 @@ jobs:
         target: ${{ matrix.target }}
 
     - name: Build for ${{ matrix.target }}
-      if: matrix.container == null
       run: cargo build --release --target ${{ matrix.target }}
-
-    - name: Build for arm64 container
-      if: matrix.container != null
-      run: cargo build --release --target aarch64-unknown-linux-gnu
-      env:
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
-        CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
-        CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
 
     - name: Upload unix-like binaries to release
       uses: svenstaro/upload-release-action@v2
