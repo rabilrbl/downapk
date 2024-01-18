@@ -6,10 +6,12 @@ use serde_json::{json, json_internal, Value};
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use core::time::Duration;
 
 pub struct ApkMirror {
     client: Client,
     host: String,
+    spinner: ProgressStyle,
 }
 
 impl ApkMirror {
@@ -41,7 +43,17 @@ impl ApkMirror {
 
         let client = Client::builder().default_headers(headers).build().unwrap();
 
-        println!("Heading to apkmirror.com for valid cookies");
+        let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
+        .unwrap()
+        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+        
+
+        let pb = ProgressBar::new(40);
+            pb.set_style(spinner_style.clone());
+            pb.set_prefix(format!("Initialise Cookies", ));
+
+        pb.set_message("Heading to apkmirror.com for valid cookies");
+        pb.enable_steady_tick(Duration::from_millis(100));
         let url = "https://www.apkmirror.com".to_string();
         let res = client
             .get(&(url.clone() + "/"))
@@ -52,13 +64,17 @@ impl ApkMirror {
             .await
             .unwrap();
 
+        pb.set_message("Got some cookies, parsing html");
         let document = Html::parse_document(&res);
 
+        pb.set_message("Parsing html to check if page is valid");
         let selector = Selector::parse("button[class='searchButton']").unwrap();
 
         assert_eq!(1, document.select(&selector).count());
 
-        ApkMirror { client, host: url }
+        pb.finish_with_message("Finished getting valid cookies");
+
+        ApkMirror { client, host: url, spinner: spinner_style }
     }
 
     fn absolute_url(&self, url: &str) -> String {
@@ -74,10 +90,17 @@ impl ApkMirror {
         url: &str,
         version: Option<&str>,
     ) -> Result<Value, Error> {
-        println!("Trying to get all apk pages from {}", url);
+        let pb = ProgressBar::new(40);
+        pb.set_style(self.spinner.clone());
+        pb.set_prefix(format!("Extract Links", ));
+        pb.set_message("Extracting APK Links from");
 
+        pb.enable_steady_tick(Duration::from_millis(100));
+
+        pb.set_message(format!("Making request to {}", url));
         let res = self.client.get(url).send().await?.text().await?;
-
+        
+        pb.set_message("Parsing html");
         let document = Html::parse_document(&res);
 
         let list_widget_selector = Selector::parse("div.listWidget").unwrap();
@@ -90,6 +113,7 @@ impl ApkMirror {
 
         let mut results: Value = json!([]);
 
+        pb.set_message("Processing each APK result");
         for element in document.select(&list_widget_selector).take(1) {
             for element in element.select(&div_without_class_selector) {
                 let mut temp_result = json!({});
@@ -146,13 +170,12 @@ impl ApkMirror {
                 results.as_array_mut().unwrap().push(temp_result);
             }
         }
-        println!("Finished collecting all apk pages");
+        pb.finish_with_message("Finished extracting links");
 
         Ok(results)
     }
 
     pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
-        println!("Searching for {}", search_query);
 
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
@@ -167,7 +190,11 @@ impl ApkMirror {
         search_query: &str,
         version: &str,
     ) -> Result<Value, Error> {
-        println!("Searching for {} with version {}", search_query, version);
+        let pb = ProgressBar::new(40);
+        pb.set_style(self.spinner.clone());
+        pb.set_prefix(format!("Search", ));
+        pb.set_message(format!("Searching for {} with version {}", search_query, version));
+        pb.enable_steady_tick(Duration::from_millis(100));
 
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
@@ -184,7 +211,11 @@ impl ApkMirror {
         arch: Option<&str>,
         dpi: Option<&str>,
     ) -> Result<Value, Error> {
-        println!("Trying to get all downloadable links from {}", url);
+        let pb = ProgressBar::new(40);
+        pb.set_style(self.spinner.clone());
+        pb.set_prefix(format!("Download", ));
+        pb.set_message(format!("Trying to get all download links from {}", url));
+        pb.enable_steady_tick(Duration::from_millis(100));
         let res = self.client.get(url).send().await?.text().await?;
 
         let document = Html::parse_document(&res);
@@ -199,7 +230,9 @@ impl ApkMirror {
         let metadata_selector = &Selector::parse("div").unwrap();
         let mut results: Value = json!([]);
 
+        pb.set_message("Processing each link");
         for table_row_element in document.select(&table_row_selector) {
+            pb.set_message("Processing a link");
             for table_head_element in table_row_element.select(&table_head_selector) {
                 let badge_text = table_head_element
                     .select(&span_apkm_badge_selector)
@@ -226,7 +259,7 @@ impl ApkMirror {
                 if badge_text != "" && version != "" && download_link != "" {
                     if let Some(type_) = type_ {
                         if type_ != badge_text {
-                            println!("Skipping type {}", badge_text);
+                            pb.set_message(format!("Skipping type {}", badge_text));
                             continue;
                         }
                     }
@@ -240,7 +273,7 @@ impl ApkMirror {
                         .to_string();
                     if let Some(arch) = arch {
                         if arch != archstr {
-                            println!("Skipping arch {}", archstr);
+                            pb.set_message(format!("Skipping arch {}", archstr));
                             continue;
                         }
                     }
@@ -254,7 +287,7 @@ impl ApkMirror {
                         .to_string();
                     if let Some(dpi) = dpi {
                         if dpi != screen_dpi {
-                            println!("Skipping dpi {}", screen_dpi);
+                            pb.set_message(format!("Skipping dpi {}", screen_dpi));
                             continue;
                         }
                     }
@@ -266,10 +299,10 @@ impl ApkMirror {
                         .collect::<String>()
                         .trim()
                         .to_string();
-                    println!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, archstr, min_version, screen_dpi);
+                    pb.set_message(format!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, archstr, min_version, screen_dpi));
                     results.as_array_mut().unwrap().push(json_internal!({
                         "version":version,
-                        "download_link":match self.download_link(&download_link).await {
+                        "download_link":match self.download_link(&download_link, &pb).await {
                             Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
                         },
                         "type":badge_text,
@@ -280,6 +313,7 @@ impl ApkMirror {
                 }
             }
         }
+        pb.finish_with_message("Finished getting all download links");
         Ok(results)
     }
 
@@ -299,8 +333,8 @@ impl ApkMirror {
         Ok(self.download_by_specifics(url, None, None, None).await?)
     }
 
-    async fn download_link(&self, url: &str) -> Result<String, Error> {
-        println!("Trying to get download page link from {}", url);
+    async fn download_link(&self, url: &str, pb: &ProgressBar) -> Result<String, Error> {
+        pb.set_message(format!("Trying to get download page link from {}", url));
         let res = self.client.get(url).send().await?.text().await?;
 
         let document = Html::parse_document(&res);
@@ -313,7 +347,7 @@ impl ApkMirror {
 
         let final_download_link = match download_link {
             Some(download_link) => {
-                println!("Found download link page, trying to get final download link");
+                pb.set_message(format!("Found download link page, trying to get final download link"));
                 let download_link = self.absolute_url(download_link.value().attr("href").unwrap());
 
                 let res = self.client.get(download_link).send().await?.text().await?;
@@ -326,7 +360,7 @@ impl ApkMirror {
                     Some(final_download_link) => {
                         let final_download_link =
                             self.absolute_url(final_download_link.value().attr("href").unwrap());
-                        println!("Found final download link: {}", final_download_link);
+                        pb.set_message(format!("Found final download link: {}", final_download_link));
                         final_download_link.to_string()
                     }
                     None => panic!("No download link found"),
@@ -334,7 +368,7 @@ impl ApkMirror {
             }
             None => panic!("No download link found"),
         };
-
+        pb.set_message("Finished getting download link");
         Ok(final_download_link)
     }
 
