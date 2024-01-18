@@ -41,7 +41,14 @@ impl ApkMirror {
 
         println!("Heading to apkmirror.com for valid cookies");
         let url = "https://www.apkmirror.com".to_string();
-        let res = client.get(&(url.clone()+"/")).send().await.unwrap().text().await.unwrap();
+        let res = client
+            .get(&(url.clone() + "/"))
+            .send()
+            .await
+            .unwrap()
+            .text()
+            .await
+            .unwrap();
 
         let document = Html::parse_document(&res);
 
@@ -332,22 +339,53 @@ impl ApkMirror {
     // ... other methods here ...
 }
 
-pub async fn download_file(downlinks: &Vec<Value>, package_name: &str, output_dir: &str) -> Result<(), Error> {
+pub async fn download_file(
+    downlinks: &Vec<Value>,
+    package_name: &str,
+    output_dir: &str,
+) -> Result<(), Error> {
     // if output_dir is not present, create it
     match tokio::fs::create_dir(output_dir).await {
         Ok(_) => {}
         Err(e) => {
             if e.kind() != std::io::ErrorKind::AlreadyExists {
-                panic!("Something went wrong while creating output directory. Err: {}", e);
+                panic!(
+                    "Something went wrong while creating output directory. Err: {}",
+                    e
+                );
             }
         }
     };
     for downlink in downlinks {
-        let download_link = downlink.as_object().unwrap().get("download_link").unwrap().as_str().unwrap();
+        let download_link = downlink
+            .as_object()
+            .unwrap()
+            .get("download_link")
+            .unwrap()
+            .as_str()
+            .unwrap();
         let url = download_link;
-        let version = downlink.as_object().unwrap().get("version").unwrap().as_str().unwrap();
-        let arch = downlink.as_object().unwrap().get("arch").unwrap().as_str().unwrap();
-        let dpi = downlink.as_object().unwrap().get("screen_dpi").unwrap().as_str().unwrap();
+        let version = downlink
+            .as_object()
+            .unwrap()
+            .get("version")
+            .unwrap()
+            .as_str()
+            .unwrap();
+        let arch = downlink
+            .as_object()
+            .unwrap()
+            .get("arch")
+            .unwrap()
+            .as_str()
+            .unwrap();
+        let dpi = downlink
+            .as_object()
+            .unwrap()
+            .get("screen_dpi")
+            .unwrap()
+            .as_str()
+            .unwrap();
         println!("Downloading file from {}", url);
         let res = reqwest::get(url).await?;
         let output_file = format!("{}_{}_{}_{}.apk", package_name, version, arch, dpi);
