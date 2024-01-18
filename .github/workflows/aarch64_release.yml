@@ -27,15 +27,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-            toolchain: nightly
-            target: ${{ matrix.target }}
+      - name: Install Cargo Binstall
+        uses: cargo-bins/cargo-binstall@main
            
       - name: Install dependencies
         run: |
-            cargo install cargo-binstall && cargo binstall cross --no-confirm
+            cargo binstall cross --no-confirm
 
       - name: Build ${{ matrix.target }}
         run: cross build --release --target ${{ matrix.target }}
