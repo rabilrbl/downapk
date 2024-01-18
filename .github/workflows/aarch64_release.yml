@@ -30,11 +30,7 @@ jobs:
             toolchain: nightly
             target: ${{ matrix.target }}
 
-      - name: Setup rust toolchain
-        run: rustup target add ${{ matrix.target }}
-
       - name: Setup for android toolchain
-        if: matrix.target == 'aarch64-linux-android'
         run: |
             rustup target add aarch64-unknown-linux-gnu
             rustup toolchain install nightly-aarch64-linux-android
@@ -45,7 +41,7 @@ jobs:
             dnf install -y gcc-c++-aarch64-linux-gnu libc6-dev-arm64-cross
 
       - name: Build for arm64 container
-        run: cargo build --release --target aarch64-unknown-linux-gnu
+        run: cargo build --release --target ${{ matrix.target }}
         env:
             CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
             CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
