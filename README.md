@@ -2,6 +2,35 @@
 
 Program to download APKs of given Android package
 
+# Installation
+
+## Pre-built binaries
+
+Download the latest binary release from [here](https://github.com/rabilrbl/downapk/releases/latest).
+
+```shell
+# Unix-like (Linux, macOS, Android)
+chmod +x downapk-linux
+./downapk-linux --help
+
+# Windows
+downapk-windows.exe --help
+```
+
+## Cargo
+
+```
+cargo install downapk
+downapk --help
+```
+
+## Build from source
+
+```
+cargo build --release
+./target/release/downapk --help
+```
+
 ## Usage
 
 ```
