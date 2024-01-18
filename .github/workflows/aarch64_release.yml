@@ -1,0 +1,53 @@
+name: Build and Upload Rust Binaries
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+      options: --user root
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        include:
+            - target: aarch64-unknown-linux-gnu
+              filename: downapk-aarch64-linux
+            - target: aarch64-linux-android
+              filename: downapk-aarch64-android
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+            toolchain: nightly
+            target: ${{ matrix.target }}
+
+      - name: Setup rust toolchain
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Setup for android toolchain
+        if: matrix.target == 'aarch64-linux-android'
+        run: |
+            rustup target add aarch64-unknown-linux-gnu
+            rustup toolchain install nightly-aarch64-linux-android
+           
+      - name: Install dependencies
+        run: |
+            dnf install -y openssl-devel
+            dnf install -y gcc-c++-aarch64-linux-gnu libc6-dev-arm64-cross
+
+      - name: Build for arm64 container
+        run: cargo build --release --target aarch64-unknown-linux-gnu
+        env:
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+            CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+            CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
+
