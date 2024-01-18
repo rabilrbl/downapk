@@ -35,7 +35,7 @@ jobs:
       - name: Setup Rust
         run: |
           rustup update --no-self-update stable
-          rustup component add --toolchainstable rustfmt rust-src
+          rustup component add --toolchain stable rustfmt rust-src
           rustup default stable
 
       - name: Setup Cache
