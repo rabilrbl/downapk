@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: fedora:latest
+      image: rust:latest
       options: --user root
     permissions:
       contents: write
@@ -32,8 +32,7 @@ jobs:
            
       - name: Install dependencies
         run: |
-            dnf groupinstall -y "Development Tools"
-            dnf install -y openssl-devel gcc g++ gcc-c++-aarch64-linux-gnu gcc-aarch64-linux-gnu
+            apt update && apt install -y g++-aarch64-linux-gnu libc6-dev-arm64-cross
 
       - name: Build for arm64 container
         run: cargo build --release --target ${{ matrix.target }}
