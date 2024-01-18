@@ -37,8 +37,12 @@ jobs:
            
       - name: Install dependencies
         run: |
-            dnf install -y openssl-devel gcc-c++-aarch64-linux-gnu
+            dnf install -y openssl-devel aarch64-linux-gnu-gcc  aarch64-linux-gnu-g++
 
       - name: Build for arm64 container
         run: cargo build --release --target ${{ matrix.target }}
+        env:
+            CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+            CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+            CXX_aarch64_unknown_linux_gnu: aarch64-linux-gnu-g++
 
