@@ -1,7 +1,9 @@
+use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
 use scraper::{Html, Selector};
 use serde_json::{json, json_internal, Value};
+use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
@@ -387,19 +389,32 @@ pub async fn download_file(
             .as_str()
             .unwrap();
         println!("Downloading file from {}", url);
-        let res = reqwest::get(url).await?;
+
+        let mut res = reqwest::get(url).await?;
+        let total_size = res.content_length().ok_or("Failed to get content length").unwrap();
+
+        let pb = ProgressBar::new(total_size);
+        pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
+        
         let output_file = format!("{}_{}_{}_{}.apk", package_name, version, arch, dpi);
         let output_path = format!("{}/{}", output_dir, output_file);
-        let mut file = match File::create(output_path).await {
-            Ok(file) => file,
-            Err(e) => panic!("Something went wrong while creating file. Err: {}", e),
-        };
-        let content = res.bytes().await?;
-        match file.write_all(&content).await {
-            Ok(_) => {}
-            Err(e) => panic!("Something went wrong while writing to file. Err: {}", e),
-        };
-        println!("Finished downloading file");
+        pb.set_message(format!("Downloading file {}", output_file));
+        let mut file = File::create(output_path)
+            .await
+            .expect("Failed to create file");
+
+        let mut downloaded: u64 = 0;
+
+        while let Some(chunk) = res.chunk().await.expect("Error while downloading file") {
+            file.write_all(&chunk).await.expect("Error while writing to file");
+
+            let new = min(downloaded + (chunk.len() as u64), total_size);
+            downloaded = new;
+            pb.set_position(new);
+        }
+
+        pb.finish_with_message(format!("Finished downloading file {}", output_file));
     }
+
     Ok(())
 }
