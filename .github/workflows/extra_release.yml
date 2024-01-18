@@ -26,8 +26,6 @@ jobs:
               filename: downapk-armv7-android
             - target: x86_64-linux-android
               filename: downapk-x86_64-android
-            - target: x86_64-unknown-linux-gnu
-              filename: downapk-x86_64-linux
             - target: i686-unknown-linux-gnu
               filename: downapk-i686-linux
     steps:
