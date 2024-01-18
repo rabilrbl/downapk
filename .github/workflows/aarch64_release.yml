@@ -23,13 +23,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Install Cargo Binstall
-        uses: cargo-bins/cargo-binstall@main
            
       - name: Install dependencies
         run: |
-            cargo binstall cross --no-confirm
+          cargo install cross --git https://github.com/cross-rs/cross
 
       - name: Build ${{ matrix.target }}
         run: cross build --release --target ${{ matrix.target }}
