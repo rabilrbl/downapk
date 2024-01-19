@@ -260,7 +260,7 @@ impl ApkMirror {
                                         .text()
                                         .collect::<String>()
                                         .trim()
-                                        .strip_suffix(":")
+                                        .strip_suffix(':')
                                         .expect("Could not strip suffix")
                                         .to_owned();
                                     name
@@ -329,7 +329,7 @@ impl ApkMirror {
             search_query
         ));
 
-        Ok(self.extract_root_links(&url, None).await?)
+        self.extract_root_links(&url, None).await
     }
 
     /// Searches for APKs on ApkMirror based on the specified search query and version.
@@ -364,7 +364,7 @@ impl ApkMirror {
             search_query
         ));
 
-        Ok(self.extract_root_links(&url, Some(version)).await?)
+        self.extract_root_links(&url, Some(version)).await
     }
 
     /// Downloads APKs from ApkMirror based on the specified URL and optional parameters.
@@ -442,7 +442,7 @@ impl ApkMirror {
                         .expect("Could not get attribute href"),
                 );
 
-                if badge_text != "" && version != "" && download_link != "" {
+                if !badge_text.is_empty() && !version.is_empty() && !download_link.is_empty() {
                     if let Some(type_) = type_ {
                         if type_ != badge_text {
                             pb.set_message(format!("Skipping type {}", badge_text));
@@ -514,7 +514,7 @@ impl ApkMirror {
         url: &str,
         arch: Option<&str>,
     ) -> Result<Vec<DownloadApkMirror>, Error> {
-        Ok(self.download_by_specifics(url, None, arch, None).await?)
+        self.download_by_specifics(url, None, arch, None).await
     }
 
     /// Gets the download link of the specified URL with specific type.
@@ -524,7 +524,7 @@ impl ApkMirror {
         url: &str,
         type_: Option<&str>,
     ) -> Result<Vec<DownloadApkMirror>, Error> {
-        Ok(self.download_by_specifics(url, type_, None, None).await?)
+        self.download_by_specifics(url, type_, None, None).await
     }
 
     /// Gets the download link of the specified URL with specific dpi.
@@ -534,13 +534,13 @@ impl ApkMirror {
         url: &str,
         dpi: Option<&str>,
     ) -> Result<Vec<DownloadApkMirror>, Error> {
-        Ok(self.download_by_specifics(url, None, None, dpi).await?)
+        self.download_by_specifics(url, None, None, dpi).await
     }
 
     /// Gets the download link of the specified URL without any specific parameters.
     /// This method is a shorthand for `download_by_specifics(url, None, None, None)`.
     pub async fn _download(&self, url: &str) -> Result<Vec<DownloadApkMirror>, Error> {
-        Ok(self.download_by_specifics(url, None, None, None).await?)
+        self.download_by_specifics(url, None, None, None).await
     }
 
     /// Gets the final direct file download link from the specified URL.
@@ -569,9 +569,7 @@ impl ApkMirror {
 
         let final_download_link = match download_link {
             Some(download_link) => {
-                pb.set_message(format!(
-                    "Found download link page, trying to get final download link"
-                ));
+                pb.set_message("Found download link page, trying to get final download link");
                 let download_link = self.absolute_url(download_link.value().attr("href").unwrap());
 
                 let res = self.client.get(download_link).send().await?.text().await?;
