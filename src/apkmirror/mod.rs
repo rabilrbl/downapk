@@ -3,11 +3,12 @@ use core::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
-use scraper::{Html, Selector};
+use scraper::Html;
 use serde_json::{json, json_internal, Value};
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use crate::utils::selector;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
@@ -98,7 +99,7 @@ impl ApkMirror {
         let document = Html::parse_document(&res);
 
         pb.set_message("Parsing html to check if page is valid");
-        let selector = Selector::parse("button[class='searchButton']").unwrap();
+        let selector = selector("button[class='searchButton']");
 
         assert_eq!(1, document.select(&selector).count());
 
@@ -141,13 +142,13 @@ impl ApkMirror {
         pb.set_message("Parsing html");
         let document = Html::parse_document(&res);
 
-        let list_widget_selector = Selector::parse("div.listWidget").unwrap();
-        let div_without_class_selector = Selector::parse("div:not([class])").unwrap();
-        let link_selector = Selector::parse("a[class='fontBlack']").unwrap();
-        let info_selector = Selector::parse("div.infoSlide.t-height").unwrap();
-        let paragraph_selector = Selector::parse("p").unwrap();
-        let info_name_selector = Selector::parse("span.infoSlide-name").unwrap();
-        let info_value_selector = Selector::parse("span.infoSlide-value").unwrap();
+        let list_widget_selector = selector("div.listWidget");
+        let div_without_class_selector = selector("div:not([class])");
+        let link_selector = selector("a[class='fontBlack']");
+        let info_selector = selector("div.infoSlide.t-height");
+        let paragraph_selector = selector("p");
+        let info_name_selector = selector("span.infoSlide-name");
+        let info_value_selector = selector("span.infoSlide-value");
 
         let mut results: Value = json!([]);
 
@@ -260,14 +261,13 @@ impl ApkMirror {
 
         let document = Html::parse_document(&res);
 
-        let table_row_selector = Selector::parse("div[class='table-row headerFont']").unwrap();
+        let table_row_selector = selector("div[class='table-row headerFont']");
         let table_head_selector =
-            Selector::parse("div[class='table-cell rowheight addseparator expand pad dowrap']")
-                .unwrap();
-        let span_apkm_badge_selector = Selector::parse("span.apkm-badge").unwrap();
+            selector("div[class='table-cell rowheight addseparator expand pad dowrap']");
+        let span_apkm_badge_selector = selector("span.apkm-badge");
         let a_accent_color_download_button_selector =
-            Selector::parse("a[class='accent_color']").unwrap();
-        let metadata_selector = &Selector::parse("div").unwrap();
+            selector("a[class='accent_color']");
+        let metadata_selector = &selector("div");
         let mut results: Value = json!([]);
 
         pb.set_message("Processing each link");
@@ -389,11 +389,10 @@ impl ApkMirror {
 
         let document = Html::parse_document(&res);
 
-        let selector = Selector::parse("a.accent_bg.btn.btn-flat.downloadButton").unwrap();
-        let final_download_link_selector =
-            Selector::parse("a[rel='nofollow'][data-google-vignette='false']").unwrap();
+        let download_button_selector = selector("a.accent_bg.btn.btn-flat.downloadButton");
+        let final_download_link_selector = selector("a[rel='nofollow'][data-google-vignette='false']");
 
-        let download_link = document.select(&selector).next();
+        let download_link = document.select(&download_button_selector).next();
 
         let final_download_link = match download_link {
             Some(download_link) => {
@@ -415,7 +414,7 @@ impl ApkMirror {
                             final_download_link
                                 .value()
                                 .attr("href")
-                                .unwrap_or_else(|| panic!("Could not get final download link")),
+                                .expect("Could not get final download link"),
                         );
                         pb.set_message(format!(
                             "Found final download link: {}",
