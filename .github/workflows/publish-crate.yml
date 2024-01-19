@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-build-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-build-cargo-publish-v1
 
       - name: Setup cargo
         run: |
