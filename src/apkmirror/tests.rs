@@ -65,8 +65,7 @@ async fn test_download() {
     )
     .await
     {
-        Ok(val) => {
-            assert_eq!(val, ());
+        Ok(_) => {
             // check if file exists in output directory
             let partial_filename = "com.instagram.lite_";
             // open output directory
