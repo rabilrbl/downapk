@@ -86,8 +86,7 @@ async fn main() {
 
     match download_result {
         Ok(download_result) => {
-            let downlinks: &Vec<Value>= download_result.as_array().expect("Could not convert download_result to array");
-            download_file(downlinks, &package_id,&output_dir).await.unwrap_or_else(
+            download_file(&download_result, &package_id,&output_dir).await.unwrap_or_else(
                 |err| {
                     panic!("Could not download file: {}", err);
                 },

@@ -42,25 +42,28 @@ async fn test_download() {
         .download_by_specifics(url, Some(type_), Some(arch), Some(dpi))
         .await;
     assert!(result.is_ok());
-    let value = result.unwrap();
-    assert!(value.is_array());
-    let array = value.as_array().unwrap();
-    assert!(!array.is_empty());
-    for item in array {
-        assert!(item.is_object());
-        let object = item.as_object().unwrap();
-        assert!(object.contains_key("version"));
-        assert!(object.contains_key("download_link"));
-        assert!(object.contains_key("type"));
-        assert!(object.contains_key("arch"));
-        assert!(object.contains_key("min_version"));
-        assert!(object.contains_key("screen_dpi"));
-        assert_eq!(object["type"], Value::String(type_.to_string()));
-        assert_eq!(object["arch"], Value::String(arch.to_string()));
-        assert_eq!(object["screen_dpi"], Value::String(dpi.to_string()));
+    let download_apkmirror_result =
+        result.unwrap_or_else(|e| panic!("Error while unwrapping result. Err: {}", e));
+    assert!(!download_apkmirror_result.is_empty());
+    for item in &download_apkmirror_result {
+        assert!(!item.version.is_empty());
+        assert!(!item.download_link.is_empty());
+        assert!(!item.type_.is_empty());
+        assert!(!item.arch.is_empty());
+        assert!(!item._min_version.is_empty());
+        assert!(!item.screen_dpi.is_empty());
+        assert_eq!(item.type_, Value::String(type_.to_string()));
+        assert_eq!(item.arch, Value::String(arch.to_string()));
+        assert_eq!(item.screen_dpi, Value::String(dpi.to_string()));
     }
 
-    match download_file(array, "com.instagram.lite", "downloads").await {
+    match download_file(
+        &download_apkmirror_result,
+        "com.instagram.lite",
+        "downloads",
+    )
+    .await
+    {
         Ok(val) => {
             assert_eq!(val, ());
             // check if file exists in output directory

@@ -1,19 +1,28 @@
+use crate::utils::selector;
 use console::Emoji;
 use core::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
 use scraper::Html;
-use serde_json::{json, json_internal, Value};
+use serde_json::{json, Value};
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use crate::utils::selector;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
+
+pub struct DownloadApkMirror {
+    version: String,
+    download_link: String,
+    type_: String,
+    arch: String,
+    _min_version: String,
+    screen_dpi: String,
+}
 
 pub struct ApkMirror {
     client: Client,
@@ -59,15 +68,14 @@ impl ApkMirror {
                 )
             });
 
-        let spinner_style =
-            ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
-                .unwrap_or_else(|e| {
-                    panic!(
-                        "Something went wrong while creating spinner style. Err: {}",
-                        e
-                    )
-                })
-                .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+        let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Something went wrong while creating spinner style. Err: {}",
+                    e
+                )
+            })
+            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
 
         let pb = ProgressBar::new(40);
         pb.set_style(spinner_style.clone());
@@ -191,9 +199,7 @@ impl ApkMirror {
                             };
 
                             let value = match value {
-                                Some(value) => {
-                                    value.text().collect::<String>().trim().to_string()
-                                }
+                                Some(value) => value.text().collect::<String>().trim().to_string(),
                                 None => continue,
                             };
 
@@ -251,7 +257,7 @@ impl ApkMirror {
         type_: Option<&str>,
         arch_: Option<&str>,
         dpi: Option<&str>,
-    ) -> Result<Value, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Get file download links", TRUCK));
@@ -265,10 +271,9 @@ impl ApkMirror {
         let table_head_selector =
             selector("div[class='table-cell rowheight addseparator expand pad dowrap']");
         let span_apkm_badge_selector = selector("span.apkm-badge");
-        let a_accent_color_download_button_selector =
-            selector("a[class='accent_color']");
+        let a_accent_color_download_button_selector = selector("a[class='accent_color']");
         let metadata_selector = &selector("div");
-        let mut results: Value = json!([]);
+        let mut results: Vec<DownloadApkMirror> = vec![];
 
         pb.set_message("Processing each link");
         for table_row_element in document.select(&table_row_selector) {
@@ -341,17 +346,20 @@ impl ApkMirror {
                         .trim()
                         .to_string();
                     pb.set_message(format!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, arch, min_version, screen_dpi));
-                    results.as_array_mut().unwrap_or_else(|| panic!("Could not get mutable results array"))
-                    .push(json_internal!({
-                        "version":version,
-                        "download_link":match self.download_link(&download_link, &pb).await {
-                            Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
+                    results.push(DownloadApkMirror {
+                        version,
+                        download_link: match self.download_link(&download_link, &pb).await {
+                            Ok(download_link) => download_link,
+                            Err(e) => panic!(
+                                "Something went wrong while getting download link. Err: {}",
+                                e
+                            ),
                         },
-                        "type":badge_text,
-                        "arch":arch,
-                        "min_version":min_version,
-                        "screen_dpi":screen_dpi,
-                    }));
+                        type_: badge_text,
+                        arch,
+                        _min_version: min_version,
+                        screen_dpi,
+                    });
                 }
             }
         }
@@ -363,7 +371,7 @@ impl ApkMirror {
         &self,
         url: &str,
         arch: Option<&str>,
-    ) -> Result<Value, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, Error> {
         Ok(self.download_by_specifics(url, None, arch, None).await?)
     }
 
@@ -371,15 +379,19 @@ impl ApkMirror {
         &self,
         url: &str,
         type_: Option<&str>,
-    ) -> Result<Value, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, Error> {
         Ok(self.download_by_specifics(url, type_, None, None).await?)
     }
 
-    pub async fn _download_by_dpi(&self, url: &str, dpi: Option<&str>) -> Result<Value, Error> {
+    pub async fn _download_by_dpi(
+        &self,
+        url: &str,
+        dpi: Option<&str>,
+    ) -> Result<Vec<DownloadApkMirror>, Error> {
         Ok(self.download_by_specifics(url, None, None, dpi).await?)
     }
 
-    pub async fn _download(&self, url: &str) -> Result<Value, Error> {
+    pub async fn _download(&self, url: &str) -> Result<Vec<DownloadApkMirror>, Error> {
         Ok(self.download_by_specifics(url, None, None, None).await?)
     }
 
@@ -390,7 +402,8 @@ impl ApkMirror {
         let document = Html::parse_document(&res);
 
         let download_button_selector = selector("a.accent_bg.btn.btn-flat.downloadButton");
-        let final_download_link_selector = selector("a[rel='nofollow'][data-google-vignette='false']");
+        let final_download_link_selector =
+            selector("a[rel='nofollow'][data-google-vignette='false']");
 
         let download_link = document.select(&download_button_selector).next();
 
@@ -399,8 +412,7 @@ impl ApkMirror {
                 pb.set_message(format!(
                     "Found download link page, trying to get final download link"
                 ));
-                let download_link =
-                    self.absolute_url(download_link.value().attr("href").unwrap());
+                let download_link = self.absolute_url(download_link.value().attr("href").unwrap());
 
                 let res = self.client.get(download_link).send().await?.text().await?;
 
@@ -435,7 +447,7 @@ impl ApkMirror {
 }
 
 pub async fn download_file(
-    downlinks: &Vec<Value>,
+    downlinks: &Vec<DownloadApkMirror>,
     package_name: &str,
     output_dir: &str,
 ) -> Result<(), Error> {
@@ -451,44 +463,12 @@ pub async fn download_file(
             }
         }
     };
-    for downlink in downlinks {
-        let download_link = downlink
-            .as_object()
-            .unwrap_or_else(|| panic!("Could not get download link"))
-            .get("download_link")
-            .unwrap()
-            .as_str()
-            .unwrap_or_else(|| panic!("Could not convert download link to str"));
-        let url = download_link;
-        let version = downlink
-            .as_object()
-            .expect("Could not get version")
-            .get("version")
-            .expect("Could not get key version")
-            .as_str()
-            .expect("Could not convert version to str");
-        let arch = downlink
-            .as_object()
-            .expect("Could not get arch")
-            .get("arch")
-            .unwrap()
-            .as_str()
-            .expect("Could not convert arch to str");
-        let dpi = downlink
-            .as_object()
-            .expect("Could not get screen_dpi")
-            .get("screen_dpi")
-            .expect("Could not get key screen_dpi")
-            .as_str()
-            .expect("Could not convert screen_dpi to str");
-        let extension = match downlink
-            .as_object()
-            .expect("Couldn't convert downlink to object")
-            .get("type")
-            .expect("Couldn't get type")
-            .as_str()
-            .expect("Couldn't convert type to str")
-        {
+    for item in downlinks {
+        let url = &item.download_link;
+        let version = &item.version;
+        let arch = &item.arch;
+        let dpi = &item.screen_dpi;
+        let extension = match item.type_.as_str() {
             "APK" => "apk",
             "BUNDLE" => "apkm",
             ext => panic!("Got an unknown apk type: {}", ext),
