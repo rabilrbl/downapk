@@ -11,6 +11,9 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build-common-archs:
     runs-on: ${{ matrix.os }}
