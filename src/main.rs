@@ -3,7 +3,6 @@ mod utils;
 
 use clap::Parser;
 use apkmirror::{ApkMirror, download_file};
-use serde_json::Value;
 
 /// Program to download APKs of given Android package ID
 #[derive(Parser, Debug)]
@@ -61,25 +60,21 @@ async fn main() {
     };
 
     let version_code = args.version_code;
-    let results: Value = match version_code.as_str() {
+    let results = match version_code.as_str() {
         "latest" => {
             let result = apkmirror.search(&package_id).await;
-            result.unwrap_or_else(|err| {
-                panic!("Unable to search for latest version. Err: {}", err);
-            })
+            result.unwrap()
         }
 
         _ => {
             let result = apkmirror
                 .search_by_version(&package_id, &version_code)
                 .await;
-            result.unwrap_or_else(|err| {
-                panic!("Unable to search for version {}. Err: {}", version_code, err);
-            })
+            result.unwrap()
         }
     };
 
-    let download_url = results[0]["link"].as_str().unwrap();
+    let download_url = results[0].link.as_str();
     let download_result = apkmirror
         .download_by_specifics(download_url, type_, arch, dpi)
         .await;

@@ -5,7 +5,6 @@ use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
 use scraper::Html;
-use serde_json::{json, Value};
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
@@ -16,12 +15,21 @@ static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 
 pub struct DownloadApkMirror {
-    version: String,
-    download_link: String,
-    type_: String,
-    arch: String,
-    _min_version: String,
-    screen_dpi: String,
+    pub version: String,
+    pub download_link: String,
+    pub type_: String,
+    pub arch: String,
+    pub min_version: String,
+    pub screen_dpi: String,
+}
+
+pub struct ExtractedLinks {
+    pub version: String,
+    pub downloads: String,
+    pub file_size: String,
+    pub uploaded: String,
+    pub link: String,
+    pub title: String,
 }
 
 pub struct ApkMirror {
@@ -132,7 +140,7 @@ impl ApkMirror {
         &self,
         url: &str,
         version: Option<&str>,
-    ) -> Result<Value, Error> {
+    ) -> Result<Vec<ExtractedLinks>, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
@@ -158,12 +166,19 @@ impl ApkMirror {
         let info_name_selector = selector("span.infoSlide-name");
         let info_value_selector = selector("span.infoSlide-value");
 
-        let mut results: Value = json!([]);
+        let mut results: Vec<ExtractedLinks> = vec![];
 
         pb.set_message("Processing each APK result");
         for element in document.select(&list_widget_selector).take(1) {
             for element in element.select(&div_without_class_selector) {
-                let mut temp_result = json!({});
+                let mut temp_result: ExtractedLinks = ExtractedLinks {
+                    version: "".to_string(),
+                    downloads: "".to_string(),
+                    file_size: "".to_string(),
+                    uploaded: "".to_string(),
+                    link: "".to_string(),
+                    title: "".to_string(),
+                };
                 let link = element.select(&link_selector).next();
                 let info = element.select(&info_selector).next();
 
@@ -188,13 +203,16 @@ impl ApkMirror {
                             let value = element.select(&info_value_selector).next();
 
                             let name = match name {
-                                Some(name) => name
-                                    .text()
-                                    .collect::<String>()
-                                    .trim()
-                                    .strip_suffix(":")
-                                    .expect("Could not strip suffix")
-                                    .to_string(),
+                                Some(name) => {
+                                    let name = name
+                                        .text()
+                                        .collect::<String>()
+                                        .trim()
+                                        .strip_suffix(":")
+                                        .expect("Could not strip suffix")
+                                        .to_owned();
+                                    name
+                                }
                                 None => continue,
                             };
 
@@ -203,25 +221,28 @@ impl ApkMirror {
                                 None => continue,
                             };
 
-                            temp_result[name] = Value::String(value);
+                            match name.as_str() {
+                                "Version" => temp_result.version = value,
+                                "Downloads" => temp_result.downloads = value,
+                                "File Size" => temp_result.file_size = value,
+                                "Uploaded" => temp_result.uploaded = value,
+                                _ => continue,
+                            }
                         }
                     }
                     None => continue,
                 };
 
                 if let Some(version) = version {
-                    if temp_result["Version"] != Value::String(version.to_string()) {
+                    if temp_result.version != version {
                         continue;
                     }
                 }
 
-                temp_result["title"] = Value::String(text);
-                temp_result["link"] = Value::String(link);
+                temp_result.title = text;
+                temp_result.link = link;
 
-                results
-                    .as_array_mut()
-                    .expect("Could not get mutable results array")
-                    .push(temp_result);
+                results.push(temp_result);
             }
         }
         pb.finish_with_message("Finished search");
@@ -229,7 +250,7 @@ impl ApkMirror {
         Ok(results)
     }
 
-    pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
+    pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLinks>, Error> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -242,7 +263,7 @@ impl ApkMirror {
         &self,
         search_query: &str,
         version: &str,
-    ) -> Result<Value, Error> {
+    ) -> Result<Vec<ExtractedLinks>, Error> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -357,7 +378,7 @@ impl ApkMirror {
                         },
                         type_: badge_text,
                         arch,
-                        _min_version: min_version,
+                        min_version,
                         screen_dpi,
                     });
                 }

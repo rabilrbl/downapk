@@ -7,13 +7,14 @@ async fn test_search() {
     let version = "19.02.34";
     let result = downloader.search_by_version(search_query, version).await;
     assert!(result.is_ok());
-    let value = result.unwrap();
-    assert!(value.is_array());
-    let object = value[0].as_object().unwrap();
-    assert!(object.contains_key("title"));
-    assert!(object.contains_key("link"));
-    assert!(object.contains_key("Version"));
-    assert_eq!(object["Version"], Value::String(version.to_string()));
+    let extracted_links = result.unwrap();
+    assert!(!extracted_links.is_empty());
+    for item in extracted_links {
+        assert!(!item.title.is_empty());
+        assert!(!item.link.is_empty());
+        assert!(!item.version.is_empty());
+        assert_eq!(item.version, version.to_string());
+    }
 }
 
 #[tokio::test]
@@ -22,12 +23,12 @@ async fn test_extract_root_links() {
     let url = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=com.google.android.youtube";
     let result = downloader.extract_root_links(url, None).await;
     assert!(result.is_ok());
-    let value = result.unwrap();
-    assert!(value.is_array());
-    for object in value.as_array().unwrap() {
-        assert!(object.is_object());
-        assert!(object.as_object().unwrap().contains_key("title"));
-        assert!(object.as_object().unwrap().contains_key("link"));
+    let extracted_links = result.unwrap();
+    assert!(!extracted_links.is_empty());
+    for item in extracted_links {
+        assert!(!item.title.is_empty());
+        assert!(!item.link.is_empty());
+        assert!(!item.version.is_empty());
     }
 }
 
@@ -50,11 +51,11 @@ async fn test_download() {
         assert!(!item.download_link.is_empty());
         assert!(!item.type_.is_empty());
         assert!(!item.arch.is_empty());
-        assert!(!item._min_version.is_empty());
+        assert!(!item.min_version.is_empty());
         assert!(!item.screen_dpi.is_empty());
-        assert_eq!(item.type_, Value::String(type_.to_string()));
-        assert_eq!(item.arch, Value::String(arch.to_string()));
-        assert_eq!(item.screen_dpi, Value::String(dpi.to_string()));
+        assert_eq!(item.type_, type_.to_string());
+        assert_eq!(item.arch, arch.to_string());
+        assert_eq!(item.screen_dpi, dpi.to_string());
     }
 
     match download_file(

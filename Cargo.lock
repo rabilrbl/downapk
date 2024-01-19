@@ -306,7 +306,6 @@ dependencies = [
  "openssl",
  "reqwest",
  "scraper",
- "serde_json",
  "tokio",
 ]
 
