@@ -1,4 +1,4 @@
-mod apkmirror;
+pub mod apkmirror;
 
 use clap::Parser;
 use apkmirror::{ApkMirror, download_file};
