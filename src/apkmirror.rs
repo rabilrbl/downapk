@@ -14,7 +14,7 @@ static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 
-pub(crate) struct ApkMirror {
+pub struct ApkMirror {
     client: Client,
     host: String,
     spinner: ProgressStyle,
