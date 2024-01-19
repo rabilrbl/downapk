@@ -37,11 +37,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Setup Rust
+        run: |
+          rustup update --no-self-update stable
+          rustup default stable
+
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: cache-cargo-${{ matrix.target }}
         with:
-          toolchain: nightly
-          target: ${{ matrix.target }}
+          prefix-key: "downapk-v1"
+          shared-key: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-
 
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
@@ -91,17 +99,16 @@ jobs:
       - name: Setup Rust
         run: |
           rustup update --no-self-update stable
-          rustup component add --toolchain stable rustfmt rust-src
-          rustup default stable
+          rustup target add ${{ matrix.target }}
 
       - name: Setup Cache
-        uses: actions/cache@v4
+        uses: Swatinem/rust-cache@v2
         env:
           cache-name: cache-cargo-${{ matrix.target }}
         with:
-          path: |
-            ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}
+          prefix-key: "downapk-v1"
+          shared-key: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-
 
       - name: Install dependencies
         run: |
