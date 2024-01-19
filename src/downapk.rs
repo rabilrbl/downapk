@@ -10,7 +10,6 @@ use core::time::Duration;
 use console::Emoji;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
-static PAPER: Emoji<'_, '_> = Emoji("📃  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
@@ -471,28 +470,17 @@ mod tests {
     async fn test_search() {
         let downloader = ApkMirror::new().await;
         let search_query = "com.google.android.youtube";
-        let result = downloader.search(search_query).await;
+        let version = "19.02.34";
+        let result = downloader.search_by_version(search_query, version).await;
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!(value.is_array());
         let object = value[0].as_object().unwrap();
         assert!(object.contains_key("title"));
         assert!(object.contains_key("link"));
+        assert!(object.contains_key("Version"));
+        assert_eq!(object["Version"], Value::String(version.to_string()));
     }
-
-    // #[tokio::test]
-    // async fn test_search_by_version() {
-    //     let downloader = ApkMirror::new().await;
-    //     let search_query = "com.google.android.youtube";
-    //     let version = "19.02.34";
-    //     let result = downloader.search_by_version(search_query, version).await;
-    //     assert!(result.is_ok());
-    //     let value = result.unwrap();
-    //     assert!(value.is_array());
-    //     let object = value[0].as_object().unwrap();
-    //     assert!(object.contains_key("title"));
-    //     assert!(object.contains_key("link"));
-    // }
 
     #[tokio::test]
     async fn test_extract_root_links() {
