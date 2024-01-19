@@ -464,6 +464,8 @@ pub async fn download_file(
 
 #[cfg(test)]
 mod tests {
+    use tokio::io::AsyncReadExt;
+
     use super::*;
 
     #[tokio::test]
@@ -523,6 +525,32 @@ mod tests {
             assert_eq!(object["arch"], Value::String(arch.to_string()));
             assert_eq!(object["screen_dpi"], Value::String(dpi.to_string()));
         }
+
+        match download_file(array, "com.instagram.lite", "downloads").await {
+            Ok(val) => {
+                assert_eq!(val, ());
+                // check if file exists in output directory
+                let partial_filename = "com.instagram.lite_";
+                // open output directory
+                let mut dir = tokio::fs::read_dir("downloads").await.unwrap();
+                // iterate over files in output directory
+                while let Some(entry) = dir.next_entry().await.unwrap() {
+                    // get file name
+                    let filename = entry.file_name();
+                    // convert filename to string
+                    let filename = filename.into_string().unwrap();
+                    // check if filename contains partial_filename
+                    if filename.contains(partial_filename) {
+                        assert!(filename.ends_with(".apk"));
+                        // delete file after test
+                        tokio::fs::remove_file(format!("downloads/{}", filename)).await.unwrap();
+                        break;
+                    }
+                }
+            }
+            Err(e) => panic!("Error while downloading file. Err: {}", e),
+        }
     }
 }
+
 
