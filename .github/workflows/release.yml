@@ -57,7 +57,9 @@ jobs:
           prefix-key: "downapk-v1"
           shared-key: ${{ runner.os }}-cargo-
           key: ${{ runner.os }}-cargo-${{ matrix.target }}-
-
+          cache-directories: |
+            C:\Users\runneradmin\.cargo
+            /Users/runner/.cargo
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
 
