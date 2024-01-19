@@ -663,10 +663,12 @@ pub async fn download_file(
         let mut res = reqwest::get(url).await?;
         let total_size = res
             .content_length()
-            .ok_or("Failed to get content length")
-            .unwrap();
+            .unwrap_or_default();
 
-        let pb = ProgressBar::new(total_size);
+        let pb = match total_size {
+            0 => ProgressBar::new(100),
+            _ => ProgressBar::new(total_size),
+        };
         pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
         pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
 
