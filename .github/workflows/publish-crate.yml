@@ -1,10 +1,11 @@
 name: Publish to Cargo
 
 on:
-  workflow_run:
-    workflows:
-      - "Build for common platforms"
-    types: [completed]
+  release:
+    types: [created]
+  push:
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
