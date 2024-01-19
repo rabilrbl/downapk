@@ -52,15 +52,17 @@ downapk [OPTIONS] --package-id <PACKAGE_ID>
 
 ### Examples
 
-```shell
-# Download all APKs of package com.google.android.youtube of universal architecture and latest version with nodpi
-downapk -p com.google.android.youtube -t apk -a universal -d nodpi
-```
+1. *Download all APKs of package com.google.android.youtube of universal architecture and latest version with nodpi*
 
-```shell
-# Download all APKs of package com.google.android.youtube of universal architecture and version 14.21.54 with nodpi
-downapk -p com.google.android.youtube -t apk -a universal -d nodpi -v 14.21.54
-```
+   ```shell
+   downapk -p com.google.android.youtube -t apk -a universal -d nodpi
+   ```
+
+2. *Download all APKs of package com.google.android.youtube of universal architecture and version 14.21.54 with nodpi*
+
+   ```shell
+   downapk -p com.google.android.youtube -t apk -a universal -d nodpi -v 14.21.54
+   ```
 
 ## License
 
