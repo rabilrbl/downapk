@@ -4,8 +4,8 @@ on:
   release:
     types: [created]
   push:
-    tags: 
-      - 'v*.*.*'
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
 
 jobs:
@@ -16,18 +16,19 @@ jobs:
     strategy:
       matrix:
         include:
-            - target: aarch64-unknown-linux-gnu
-              filename: downapk-aarch64-linux
-            - target: aarch64-linux-android
-              filename: downapk-aarch64-android
-            - target: armv7-unknown-linux-gnueabihf
-              filename: downapk-armv7-linux
-            - target: armv7-linux-androideabi
-              filename: downapk-armv7-android
-            - target: x86_64-linux-android
-              filename: downapk-x86_64-android
-            - target: i686-unknown-linux-gnu
-              filename: downapk-i686-linux
+          - target: aarch64-unknown-linux-gnu
+            filename: downapk-linux-aarch64
+          - target: aarch64-linux-android
+            filename: downapk-android-aarch64
+          - target: armv7-unknown-linux-gnueabihf
+            filename: downapk-linux-armv7
+          - target: armv7-linux-androideabi
+            filename: downapk-android-armv7
+          - target: x86_64-linux-android
+            filename: downapk-android-x86_64
+          - target: i686-unknown-linux-gnu
+            filename: downapk-linux-i686
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,7 +49,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-${{ matrix.target }}-
-           
+
       - name: Install dependencies
         run: |
           cargo install cross --git https://github.com/cross-rs/cross

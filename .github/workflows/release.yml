@@ -4,10 +4,10 @@ on:
   release:
     types: [created]
   push:
-    tags: 
-      - 'v*.*.*'
+    tags:
+      - "v*.*.*"
   workflow_dispatch:
-    
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -18,49 +18,49 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            filename: downapk-x86_64-linux
+            filename: downapk-linux-x86_64
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            filename: downapk-x86_64-windows.exe
+            filename: downapk-windows-x86_64.exe
           - os: windows-latest
             target: i686-pc-windows-msvc
-            filename: downapk-i686-windows.exe
+            filename: downapk-windows-i686.exe
           - os: macos-latest
             target: x86_64-apple-darwin
-            filename: downapk-x86_64-darwin
+            filename: downapk-darwin-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
-            filename: downapk-aarch64-darwin
+            filename: downapk-darwin-aarch64
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Install Rust
-      uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: nightly
-        target: ${{ matrix.target }}
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          target: ${{ matrix.target }}
 
-    - name: Build for ${{ matrix.target }}
-      run: cargo build --release --target ${{ matrix.target }}
+      - name: Build for ${{ matrix.target }}
+        run: cargo build --release --target ${{ matrix.target }}
 
-    - name: Upload unix-like binaries to release
-      uses: svenstaro/upload-release-action@v2
-      if: contains(matrix.target, 'windows') == false
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/downapk
-        asset_name: ${{ matrix.filename }}
-        tag: ${{ github.ref }}
-        file_glob: false
+      - name: Upload unix-like binaries to release
+        uses: svenstaro/upload-release-action@v2
+        if: contains(matrix.target, 'windows') == false
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/downapk
+          asset_name: ${{ matrix.filename }}
+          tag: ${{ github.ref }}
+          file_glob: false
 
-    - name: Upload windows binaries to release
-      uses: svenstaro/upload-release-action@v2
-      if: contains(matrix.target, 'windows') == true
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: target/${{ matrix.target }}/release/downapk.exe
-        asset_name: ${{ matrix.filename }}
-        tag: ${{ github.ref }}
-        file_glob: false
+      - name: Upload windows binaries to release
+        uses: svenstaro/upload-release-action@v2
+        if: contains(matrix.target, 'windows') == true
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/downapk.exe
+          asset_name: ${{ matrix.filename }}
+          tag: ${{ github.ref }}
+          file_glob: false
