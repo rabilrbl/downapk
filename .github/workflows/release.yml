@@ -23,9 +23,15 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             filename: downapk-windows-x86_64.exe
+            extension: .exe
           - os: windows-latest
             target: i686-pc-windows-msvc
             filename: downapk-windows-i686.exe
+            extension: .exe
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            filename: downapk-windows-aarch64.exe
+            extension: .exe
           - os: macos-latest
             target: x86_64-apple-darwin
             filename: downapk-darwin-x86_64
@@ -55,22 +61,12 @@ jobs:
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Upload unix-like binaries to release
-        uses: svenstaro/upload-release-action@v2
-        if: contains(matrix.target, 'windows') == false
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk
-          asset_name: ${{ matrix.filename }}
-          tag: ${{ github.ref }}
-          file_glob: false
-
-      - name: Upload windows binaries to release
+      - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         if: contains(matrix.target, 'windows') == true
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk.exe
+          file: target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
           asset_name: ${{ matrix.filename }}
           tag: ${{ github.ref }}
           file_glob: false
@@ -118,7 +114,7 @@ jobs:
       - name: Build ${{ matrix.target }}
         run: cross build --release --target ${{ matrix.target }}
 
-      - name: Upload unix-like binaries to release
+      - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         if: contains(matrix.target, 'windows') == false
         with:
