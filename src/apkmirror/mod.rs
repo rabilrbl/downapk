@@ -185,7 +185,7 @@ impl ApkMirror {
     /// #[tokio::main]
     /// async fn main() {
     ///     let apk_mirror = ApkMirror::new().await;
-    ///     let links = apk_mirror.extract_root_links("https://www.apkmirror.com", Some("1.0.0")).await;
+    ///     let links = apk_mirror.extract_root_links("https://www.apkmirror.com/apk/instagram/instagram-lite/", Some("390.0.0.9.116")).await;
     /// }
     /// ```
     pub async fn extract_root_links(
@@ -320,7 +320,7 @@ impl ApkMirror {
     /// #[tokio::main]
     /// async fn main() {
     ///     let apk_mirror = ApkMirror::new().await;
-    ///     let results = apk_mirror.search("example").await;
+    ///     let results = apk_mirror.search("com.instagram.lite").await;
     /// }
     /// ```
     pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLinks>, Error> {
@@ -351,7 +351,7 @@ impl ApkMirror {
     /// #[tokio::main]
     /// async fn main() {
     ///     let apk_mirror = ApkMirror::new().await;
-    ///     let results = apk_mirror.search_by_version("example", "1.0.0").await;
+    ///     let results = apk_mirror.search_by_version("com.instagram.lite", "390.0.0.9.116").await;
     /// }
     /// ```
     pub async fn search_by_version(
@@ -388,7 +388,7 @@ impl ApkMirror {
     /// #[tokio::main]
     /// async fn main() {
     ///     let apk_mirror = ApkMirror::new().await;
-    ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/download/apk/file.apk", Some("arm64-v8a"), Some("arm64"), Some("480")).await;
+    ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("APK"), Some("arm64-v8a"), Some("nodpi")).await;
     /// }
     /// ```
     pub async fn download_by_specifics(
@@ -628,8 +628,8 @@ impl ApkMirror {
 /// #[tokio::main]
 /// async fn main() {
 ///    let apk_mirror = ApkMirror::new().await;
-///   let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com", None, None, None).await.unwrap();
-///  download_file(&downloads, "com.example.app", "downloads").await.unwrap();
+///   let downloads = apk_mirror._download_by_arch("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("arm64-v8a")).await.unwrap();
+///  download_file(&downloads, "com.instagram.lite", "downloads").await.unwrap();
 /// }
 /// ```
 pub async fn download_file(
