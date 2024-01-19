@@ -12,7 +12,32 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        run: |
+          rustup update --no-self-update stable
+          rustup default stable
+
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: cache-cargo
+        with:
+          prefix-key: "downapk-v1"
+          shared-key: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-
+
+      - name: Run tests
+        run: |
+          cargo test --all
+
   build-common-archs:
+    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -75,6 +100,7 @@ jobs:
           file_glob: false
 
   build-extra-archs:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -126,3 +152,32 @@ jobs:
           asset_name: ${{ matrix.filename }}
           tag: ${{ github.ref }}
           file_glob: false
+
+  publish:
+    needs: [build-common-archs, build-extra-archs]
+    runs-on: ubuntu-latest
+    name: "Publish to Cargo"
+    environment: Cargo
+
+    steps:
+      - uses: actions/checkout@master
+
+      # Use caching to speed up your build
+      - name: Setup Cache
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: cache-cargo
+        with:
+          prefix-key: "downapk-v1"
+          shared-key: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-cargo-
+
+      - name: Setup cargo
+        run: |
+          rustup update --no-self-update stable
+          
+      - name: Cargo publish
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        
