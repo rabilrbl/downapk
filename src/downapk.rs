@@ -48,7 +48,7 @@ impl ApkMirror {
             HeaderValue::from_static("cf.vojtechh.apkmirror"),
         );
 
-        let client = Client::builder().default_headers(headers).build().unwrap();
+        let client = Client::builder().cookie_store(true).default_headers(headers).build().unwrap();
 
         let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
         .unwrap()
@@ -459,3 +459,143 @@ pub async fn download_file(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_search() {
+        let downloader = ApkMirror::new().await;
+        let search_query = "com.google.android.youtube";
+        let result = downloader.search(search_query).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let object = value[0].as_object().unwrap();
+        assert!(object.contains_key("title"));
+        assert!(object.contains_key("link"));
+    }
+
+    // #[tokio::test]
+    // async fn test_search_by_version() {
+    //     let downloader = ApkMirror::new().await;
+    //     let search_query = "com.google.android.youtube";
+    //     let version = "19.02.34";
+    //     let result = downloader.search_by_version(search_query, version).await;
+    //     assert!(result.is_ok());
+    //     let value = result.unwrap();
+    //     assert!(value.is_array());
+    //     let object = value[0].as_object().unwrap();
+    //     assert!(object.contains_key("title"));
+    //     assert!(object.contains_key("link"));
+    // }
+
+    #[tokio::test]
+    async fn test_extract_root_links() {
+        let downloader = ApkMirror::new().await;
+        let url = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=com.google.android.youtube";
+        let result = downloader.extract_root_links(url, None).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let object = value[0].as_object().unwrap();
+        assert!(object.contains_key("title"));
+        assert!(object.contains_key("link"));
+    }
+
+    #[tokio::test]
+    async fn test_download_by_arch() {
+        let downloader = ApkMirror::new().await;
+        let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
+        let arch = "x86";
+        let result = downloader._download_by_arch(url, Some(arch)).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let array = value.as_array().unwrap();
+        assert!(!array.is_empty());
+        for item in array {
+            assert!(item.is_object());
+            let object = item.as_object().unwrap();
+            assert!(object.contains_key("version"));
+            assert!(object.contains_key("download_link"));
+            assert!(object.contains_key("type"));
+            assert!(object.contains_key("arch"));
+            assert!(object.contains_key("min_version"));
+            assert!(object.contains_key("screen_dpi"));
+            assert_eq!(object["arch"], arch);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_download_by_type() {
+        let downloader = ApkMirror::new().await;
+        let url = "https://www.apkmirror.com/apk/x-corp/twitter/twitter-10-24-0-release-0-release/";
+        let type_ = "APK";
+        let result = downloader._download_by_type(url, Some(type_)).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let array = value.as_array().unwrap();
+        assert!(!array.is_empty());
+        for item in array {
+            assert!(item.is_object());
+            let object = item.as_object().unwrap();
+            assert!(object.contains_key("version"));
+            assert!(object.contains_key("download_link"));
+            assert!(object.contains_key("type"));
+            assert!(object.contains_key("arch"));
+            assert!(object.contains_key("min_version"));
+            assert!(object.contains_key("screen_dpi"));
+            assert_eq!(object["type"], type_);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_download_by_dpi() {
+        let downloader = ApkMirror::new().await;
+        let url = "https://www.apkmirror.com/apk/x-corp/twitter/twitter-10-24-0-release-0-release/";
+        let dpi = "320-640dpi";
+        let result = downloader._download_by_dpi(url, Some(dpi)).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let array = value.as_array().unwrap();
+        assert!(!array.is_empty());
+        for item in array {
+            assert!(item.is_object());
+            let object = item.as_object().unwrap();
+            assert!(object.contains_key("version"));
+            assert!(object.contains_key("download_link"));
+            assert!(object.contains_key("type"));
+            assert!(object.contains_key("arch"));
+            assert!(object.contains_key("min_version"));
+            assert!(object.contains_key("screen_dpi"));
+            assert_eq!(object["screen_dpi"], dpi);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_download() {
+        let downloader = ApkMirror::new().await;
+        let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
+        let result = downloader._download(url).await;
+        assert!(result.is_ok());
+        let value = result.unwrap();
+        assert!(value.is_array());
+        let array = value.as_array().unwrap();
+        assert!(!array.is_empty());
+        for item in array {
+            assert!(item.is_object());
+            let object = item.as_object().unwrap();
+            assert!(object.contains_key("version"));
+            assert!(object.contains_key("download_link"));
+            assert!(object.contains_key("type"));
+            assert!(object.contains_key("arch"));
+            assert!(object.contains_key("min_version"));
+            assert!(object.contains_key("screen_dpi"));
+        }
+    }
+}
+
