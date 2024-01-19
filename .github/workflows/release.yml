@@ -101,9 +101,7 @@ jobs:
         with:
           path: |
             ~/.cargo
-          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-${{ matrix.target }}-
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}
 
       - name: Install dependencies
         run: |
