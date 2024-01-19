@@ -99,9 +99,11 @@ impl ApkMirror {
     ) -> Result<Value, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
-        pb.set_prefix(format!(" {} Extract Links", PAPER));
-        pb.set_message("Extracting APK Links from");
-
+        pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
+        match version {
+            Some(version) => pb.set_message(format!("Searching in {} for version {}", url, version)),
+            None => pb.set_message(format!("Searching in {}", url)),
+        }
         pb.enable_steady_tick(Duration::from_millis(100));
 
         pb.set_message(format!("Making request to {}", url));
@@ -177,7 +179,7 @@ impl ApkMirror {
                 results.as_array_mut().unwrap().push(temp_result);
             }
         }
-        pb.finish_with_message("Finished extracting links");
+        pb.finish_with_message("Finished search");
 
         Ok(results)
     }
@@ -197,17 +199,12 @@ impl ApkMirror {
         search_query: &str,
         version: &str,
     ) -> Result<Value, Error> {
-        let pb = ProgressBar::new(40);
-        pb.set_style(self.spinner.clone());
-        pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
-        pb.set_message(format!("Searching for {} with version {}", search_query, version));
-        pb.enable_steady_tick(Duration::from_millis(100));
 
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
         ));
-
+        
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
@@ -505,80 +502,10 @@ mod tests {
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!(value.is_array());
-        let object = value[0].as_object().unwrap();
-        assert!(object.contains_key("title"));
-        assert!(object.contains_key("link"));
-    }
-
-    #[tokio::test]
-    async fn test_download_by_arch() {
-        let downloader = ApkMirror::new().await;
-        let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
-        let arch = "x86";
-        let result = downloader._download_by_arch(url, Some(arch)).await;
-        assert!(result.is_ok());
-        let value = result.unwrap();
-        assert!(value.is_array());
-        let array = value.as_array().unwrap();
-        assert!(!array.is_empty());
-        for item in array {
-            assert!(item.is_object());
-            let object = item.as_object().unwrap();
-            assert!(object.contains_key("version"));
-            assert!(object.contains_key("download_link"));
-            assert!(object.contains_key("type"));
-            assert!(object.contains_key("arch"));
-            assert!(object.contains_key("min_version"));
-            assert!(object.contains_key("screen_dpi"));
-            assert_eq!(object["arch"], arch);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_download_by_type() {
-        let downloader = ApkMirror::new().await;
-        let url = "https://www.apkmirror.com/apk/x-corp/twitter/twitter-10-24-0-release-0-release/";
-        let type_ = "APK";
-        let result = downloader._download_by_type(url, Some(type_)).await;
-        assert!(result.is_ok());
-        let value = result.unwrap();
-        assert!(value.is_array());
-        let array = value.as_array().unwrap();
-        assert!(!array.is_empty());
-        for item in array {
-            assert!(item.is_object());
-            let object = item.as_object().unwrap();
-            assert!(object.contains_key("version"));
-            assert!(object.contains_key("download_link"));
-            assert!(object.contains_key("type"));
-            assert!(object.contains_key("arch"));
-            assert!(object.contains_key("min_version"));
-            assert!(object.contains_key("screen_dpi"));
-            assert_eq!(object["type"], type_);
-        }
-    }
-
-    #[tokio::test]
-    async fn test_download_by_dpi() {
-        let downloader = ApkMirror::new().await;
-        let url = "https://www.apkmirror.com/apk/x-corp/twitter/twitter-10-24-0-release-0-release/";
-        let dpi = "320-640dpi";
-        let result = downloader._download_by_dpi(url, Some(dpi)).await;
-        assert!(result.is_ok());
-        let value = result.unwrap();
-        assert!(value.is_array());
-        let array = value.as_array().unwrap();
-        assert!(!array.is_empty());
-        for item in array {
-            assert!(item.is_object());
-            let object = item.as_object().unwrap();
-            assert!(object.contains_key("version"));
-            assert!(object.contains_key("download_link"));
-            assert!(object.contains_key("type"));
-            assert!(object.contains_key("arch"));
-            assert!(object.contains_key("min_version"));
-            assert!(object.contains_key("screen_dpi"));
-            assert_eq!(object["screen_dpi"], dpi);
+        for object in value.as_array().unwrap() {
+            assert!(object.is_object());
+            assert!(object.as_object().unwrap().contains_key("title"));
+            assert!(object.as_object().unwrap().contains_key("link"));
         }
     }
 
@@ -586,7 +513,10 @@ mod tests {
     async fn test_download() {
         let downloader = ApkMirror::new().await;
         let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
-        let result = downloader._download(url).await;
+        let arch = "armeabi-v7a";
+        let type_ = "APK";
+        let dpi = "nodpi";
+        let result = downloader.download_by_specifics(url, Some(type_), Some(arch), Some(dpi)).await;
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!(value.is_array());
@@ -601,6 +531,9 @@ mod tests {
             assert!(object.contains_key("arch"));
             assert!(object.contains_key("min_version"));
             assert!(object.contains_key("screen_dpi"));
+            assert_eq!(object["type"], Value::String(type_.to_string()));
+            assert_eq!(object["arch"], Value::String(arch.to_string()));
+            assert_eq!(object["screen_dpi"], Value::String(dpi.to_string()));
         }
     }
 }
