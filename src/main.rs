@@ -1,7 +1,7 @@
-mod downapk;
+mod apkmirror;
 
 use clap::Parser;
-use downapk::apkmirror::{ApkMirror, download_file};
+use apkmirror::{ApkMirror, download_file};
 use serde_json::Value;
 
 /// Program to download APKs of given Android package ID
