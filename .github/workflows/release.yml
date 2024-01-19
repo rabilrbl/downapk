@@ -130,7 +130,9 @@ jobs:
     needs: [build-common-archs, build-extra-archs]
     runs-on: ubuntu-latest
     name: "Publish to Cargo"
-    environment: Cargo
+    environment: 
+      name: Cargo
+      url: https://crates.io/crates/downapk
 
     steps:
       - uses: actions/checkout@master
