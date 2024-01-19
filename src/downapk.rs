@@ -429,6 +429,12 @@ pub async fn download_file(
             .unwrap()
             .as_str()
             .unwrap();
+        let extension = match downlink.as_object().unwrap().get("type").unwrap().as_str().unwrap()
+        {
+            "APK" => "apk",
+            "BUNDLE" => "apkm",
+            ext => panic!("Got an unknown apk type: {}", ext),
+        };
 
         let mut res = reqwest::get(url).await?;
         let total_size = res.content_length().ok_or("Failed to get content length").unwrap();
@@ -437,7 +443,7 @@ pub async fn download_file(
         pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
         pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
         
-        let output_file = format!("{}_{}_{}_{}.apk", package_name, version, arch, dpi);
+        let output_file = format!("{}_{}_{}_{}.{}", package_name, version, arch, dpi, extension);
         let output_path = format!("{}/{}", output_dir, output_file);
         pb.set_message(format!("File {}", output_file));
         let mut file = File::create(output_path)
