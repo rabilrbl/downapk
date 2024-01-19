@@ -19,11 +19,11 @@ jobs:
     - name: Setup Cache
       uses: Swatinem/rust-cache@v2
       env:
-        cache-name: cache-cargo-${{ runner.arch }}-unknown-linux-gnu
+        cache-name: cache-cargo-x86_64-unknown-linux-gnu
       with:
         prefix-key: "downapk-v1"
         shared-key: ${{ runner.os }}-cargo-
-        key: ${{ runner.os }}-cargo-${{ runner.arch }}-unknown-linux-gnu-
+        key: ${{ runner.os }}-cargo-x86_64-unknown-linux-gnu-
     - name: Build
       run: cargo build --verbose
     - name: Run tests
