@@ -65,6 +65,7 @@ jobs:
       - name: Setup Rust
         run: |
           rustup update --no-self-update stable
+          rustup target add ${{ matrix.target }}
           rustup default stable
 
       - name: Setup Cache
