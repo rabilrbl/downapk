@@ -36,7 +36,7 @@ async fn test_extract_root_links() {
 async fn test_download() {
     let downloader = ApkMirror::new().await;
     let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
-    let arch = "armeabi-v7a";
+    let arch = "arm64-v8a";
     let type_ = "APK";
     let dpi = "nodpi";
     let result = downloader
