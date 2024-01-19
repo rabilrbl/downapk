@@ -1,7 +1,7 @@
 mod downapk;
 
 use clap::Parser;
-use downapk::{ApkMirror, download_file};
+use downapk::apkmirror::{ApkMirror, download_file};
 use serde_json::Value;
 
 /// Program to download APKs of given Android package ID
@@ -63,24 +63,18 @@ async fn main() {
     let results: Value = match version_code.as_str() {
         "latest" => {
             let result = apkmirror.search(&package_id).await;
-            match result {
-                Ok(result) => result,
-                Err(err) => {
-                    panic!("Error: {}", err);
-                }
-            }
+            result.unwrap_or_else(|err| {
+                panic!("Unable to search for latest version. Err: {}", err);
+            })
         }
 
         _ => {
             let result = apkmirror
                 .search_by_version(&package_id, &version_code)
                 .await;
-            match result {
-                Ok(result) => result,
-                Err(err) => {
-                    panic!("Error: {}", err);
-                }
-            }
+            result.unwrap_or_else(|err| {
+                panic!("Unable to search for version {}. Err: {}", version_code, err);
+            })
         }
     };
 
@@ -91,15 +85,12 @@ async fn main() {
 
     match download_result {
         Ok(download_result) => {
-            let downlinks: &Vec<Value>= download_result.as_array().unwrap();
-            match download_file(downlinks, &package_id,&output_dir).await {
-                Ok(_) => {
-                    println!("Downloaded APKs to {}", output_dir);
-                }
-                Err(err) => {
-                    panic!("Error: {}", err);
-                }
-            }
+            let downlinks: &Vec<Value>= download_result.as_array().expect("Could not convert download_result to array");
+            download_file(downlinks, &package_id,&output_dir).await.unwrap_or_else(
+                |err| {
+                    panic!("Could not download file: {}", err);
+                },
+            )
         }
         Err(err) => {
             panic!("Error: {}", err);
