@@ -14,31 +14,61 @@ static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
 static DOWNLOAD_EMOJI: Emoji<'_, '_> = Emoji("📥 ", ":-)");
 static TRUCK: Emoji<'_, '_> = Emoji("🚚  ", "");
 
+/// Represents a structure for downloading APK files from ApkMirror.
 pub struct DownloadApkMirror {
+    /// The version of the APK file.
     pub version: String,
+    /// The download link of the APK file.
     pub download_link: String,
+    /// The type of the APK file. It can be either APK or BUNDLE.
     pub type_: String,
+    /// The architecture of the APK file. It can be either arm64-v8a, armeabi-v7a, x86, x86_64, universal.
     pub arch: String,
+    /// The minimum version of Android required to run the APK file.
     pub min_version: String,
+    /// The screen dpi of the APK file. It can be either nodpi, 120-640dpi, ...
     pub screen_dpi: String,
 }
 
+/// Represents the extracted links from a source.
 pub struct ExtractedLinks {
+    /// The version of the extracted link.
     pub version: String,
+    /// The number of downloads for the extracted link.
     pub downloads: String,
+    /// The file size of the extracted link.
     pub file_size: String,
+    /// The date and time when the link was uploaded.
     pub uploaded: String,
+    /// The actual link extracted.
     pub link: String,
+    /// The title of the extracted link.
     pub title: String,
 }
 
+/// Represents an ApkMirror instance.
 pub struct ApkMirror {
+    /// The reqwest client.
     client: Client,
+    /// The host of the ApkMirror instance.
     host: String,
+    /// The spinner style for loading animations.
     spinner: ProgressStyle,
 }
 
 impl ApkMirror {
+    /// Initializes a new instance of `ApkMirror`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use downapk::apkmirror::ApkMirror;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let apk_mirror = ApkMirror::new().await;
+    /// }
+    /// ```
     pub async fn new() -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(reqwest::header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
@@ -136,6 +166,28 @@ impl ApkMirror {
         }
     }
 
+    /// Extracts the root links from the specified URL.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - The URL to extract the root links from.
+    /// * `version` - Optional version to filter the results by.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `ExtractedLinks` or an `Error` if the extraction fails.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use downapk::apkmirror::ApkMirror;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let links = apk_mirror.extract_root_links("https://www.apkmirror.com", Some("1.0.0")).await;
+    /// }
+    /// ```
     pub async fn extract_root_links(
         &self,
         url: &str,
@@ -250,6 +302,27 @@ impl ApkMirror {
         Ok(results)
     }
 
+    /// Searches for APKs on ApkMirror based on the specified search query.
+    ///
+    /// # Arguments
+    ///
+    /// * `search_query` - The search query to use.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `ExtractedLinks` or an `Error` if the search fails.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use downapk::apkmirror::ApkMirror;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let results = apk_mirror.search("example").await;
+    /// }
+    /// ```
     pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLinks>, Error> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
@@ -259,6 +332,28 @@ impl ApkMirror {
         Ok(self.extract_root_links(&url, None).await?)
     }
 
+    /// Searches for APKs on ApkMirror based on the specified search query and version.
+    ///
+    /// # Arguments
+    ///
+    /// * `search_query` - The search query to use.
+    /// * `version` - The version to filter the results by.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `ExtractedLinks` or an `Error` if the search fails.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use downapk::apkmirror::ApkMirror;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let results = apk_mirror.search_by_version("example", "1.0.0").await;
+    /// }
+    /// ```
     pub async fn search_by_version(
         &self,
         search_query: &str,
@@ -272,6 +367,30 @@ impl ApkMirror {
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
+    /// Downloads APKs from ApkMirror based on the specified URL and optional parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `url` - The URL of the APK to download.
+    /// * `type_` - Optional type of the APK (e.g., arm64-v8a).
+    /// * `arch_` - Optional architecture of the APK (e.g., arm64).
+    /// * `dpi` - Optional DPI (dots per inch) of the APK.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `DownloadApkMirror` or an `Error` if the download fails.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use downapk::apkmirror::ApkMirror;
+    ///
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/download/apk/file.apk", Some("arm64-v8a"), Some("arm64"), Some("480")).await;
+    /// }
+    /// ```
     pub async fn download_by_specifics(
         &self,
         url: &str,
@@ -388,6 +507,8 @@ impl ApkMirror {
         Ok(results)
     }
 
+    /// Gets the download link of the specified URL with specific arch.
+    /// This method is a shorthand for `download_by_specifics(url, None, arch, None)`.
     pub async fn _download_by_arch(
         &self,
         url: &str,
@@ -396,6 +517,8 @@ impl ApkMirror {
         Ok(self.download_by_specifics(url, None, arch, None).await?)
     }
 
+    /// Gets the download link of the specified URL with specific type.
+    /// This method is a shorthand for `download_by_specifics(url, type_, None, None)`.
     pub async fn _download_by_type(
         &self,
         url: &str,
@@ -404,6 +527,8 @@ impl ApkMirror {
         Ok(self.download_by_specifics(url, type_, None, None).await?)
     }
 
+    /// Gets the download link of the specified URL with specific dpi.
+    /// This method is a shorthand for `download_by_specifics(url, None, None, dpi)`.
     pub async fn _download_by_dpi(
         &self,
         url: &str,
@@ -412,10 +537,24 @@ impl ApkMirror {
         Ok(self.download_by_specifics(url, None, None, dpi).await?)
     }
 
+    /// Gets the download link of the specified URL without any specific parameters.
+    /// This method is a shorthand for `download_by_specifics(url, None, None, None)`.
     pub async fn _download(&self, url: &str) -> Result<Vec<DownloadApkMirror>, Error> {
         Ok(self.download_by_specifics(url, None, None, None).await?)
     }
 
+    /// Gets the final direct file download link from the specified URL.
+    /// This method is used internally by `download_by_specifics`.
+    /// It is recommended to use `download_by_specifics` instead of this method.
+    /// 
+    /// # Arguments
+    /// 
+    /// * `url` - The URL to get the final download link from.
+    /// * `pb` - The progress bar to use.
+    /// 
+    /// # Returns
+    /// 
+    /// A `Result` containing the final download link or an `Error` if the download link could not be found.
     async fn download_link(&self, url: &str, pb: &ProgressBar) -> Result<String, Error> {
         pb.set_message(format!("Trying to get download page link from {}", url));
         let res = self.client.get(url).send().await?.text().await?;
@@ -467,6 +606,34 @@ impl ApkMirror {
     // ... other methods here ...
 }
 
+/// Downloads APK files from APKMirror based on the provided DownloadApkMirror structs.
+/// Creates the output directory if it doesn't exist.
+/// Downloads each file to the output directory, using the package name, version, arch, dpi
+/// and extension to construct a filename.
+/// Shows a progress bar while downloading.
+/// 
+/// # Arguments
+/// 
+/// * `downlinks` - The vector of DownloadApkMirror structs to download.
+/// * `package_name` - The package name of the APK file.
+/// * `output_dir` - The output directory to download the APK files to.
+/// 
+/// # Returns
+/// 
+/// A `Result` containing `()` or an `Error` if the download fails.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use downapk::apkmirror::{ApkMirror, download_file};
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///    let apk_mirror = ApkMirror::new().await;
+///   let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com", None, None, None).await.unwrap();
+///  download_file(&downloads, "com.example.app", "downloads").await.unwrap();
+/// }
+/// ```
 pub async fn download_file(
     downlinks: &Vec<DownloadApkMirror>,
     package_name: &str,
