@@ -464,7 +464,6 @@ pub async fn download_file(
 
 #[cfg(test)]
 mod tests {
-    use tokio::io::AsyncReadExt;
 
     use super::*;
 
