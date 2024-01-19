@@ -1,3 +1,5 @@
+use console::Emoji;
+use core::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::{Client, Error};
@@ -6,8 +8,6 @@ use serde_json::{json, json_internal, Value};
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use core::time::Duration;
-use console::Emoji;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
@@ -47,16 +47,29 @@ impl ApkMirror {
             HeaderValue::from_static("cf.vojtechh.apkmirror"),
         );
 
-        let client = Client::builder().cookie_store(true).default_headers(headers).build().unwrap();
+        let client = Client::builder()
+            .cookie_store(true)
+            .default_headers(headers)
+            .build()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Something went wrong while creating reqwest client. Err: {}",
+                    e
+                )
+            });
 
         let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
-        .unwrap()
-        .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
-        
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Something went wrong while creating spinner style. Err: {}",
+                    e
+                )
+            })
+            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
 
         let pb = ProgressBar::new(40);
-            pb.set_style(spinner_style.clone());
-            pb.set_prefix(format!(" {} Intialise", SPARKLE));
+        pb.set_style(spinner_style.clone());
+        pb.set_prefix(format!(" {} Intialise", SPARKLE));
 
         pb.set_message("Heading to apkmirror.com for valid cookies");
         pb.enable_steady_tick(Duration::from_millis(100));
@@ -65,10 +78,20 @@ impl ApkMirror {
             .get(&(url.clone() + "/"))
             .send()
             .await
-            .unwrap()
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Something went wrong while making request for cookies. Err: {}",
+                    e
+                )
+            })
             .text()
             .await
-            .unwrap();
+            .unwrap_or_else(|e| {
+                panic!(
+                    "Something went wrong while unwrapping response text. Err: {}",
+                    e
+                )
+            });
 
         pb.set_message("Got some cookies, parsing html");
         let document = Html::parse_document(&res);
@@ -80,7 +103,11 @@ impl ApkMirror {
 
         pb.finish_with_message("Finished getting valid cookies");
 
-        ApkMirror { client, host: url, spinner: spinner_style }
+        ApkMirror {
+            client,
+            host: url,
+            spinner: spinner_style,
+        }
     }
 
     fn absolute_url(&self, url: &str) -> String {
@@ -100,14 +127,16 @@ impl ApkMirror {
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
         match version {
-            Some(version) => pb.set_message(format!("Searching in {} for version {}", url, version)),
+            Some(version) => {
+                pb.set_message(format!("Searching in {} for version {}", url, version))
+            }
             None => pb.set_message(format!("Searching in {}", url)),
         }
         pb.enable_steady_tick(Duration::from_millis(100));
 
         pb.set_message(format!("Making request to {}", url));
         let res = self.client.get(url).send().await?.text().await?;
-        
+
         pb.set_message("Parsing html");
         let document = Html::parse_document(&res);
 
@@ -134,7 +163,11 @@ impl ApkMirror {
                 };
 
                 let link = match link {
-                    Some(link) => self.absolute_url(link.value().attr("href").unwrap()),
+                    Some(link) => self.absolute_url(
+                        link.value()
+                            .attr("href")
+                            .expect("Could not get attribute href"),
+                    ),
                     None => continue,
                 };
 
@@ -150,7 +183,7 @@ impl ApkMirror {
                                     .collect::<String>()
                                     .trim()
                                     .strip_suffix(":")
-                                    .unwrap()
+                                    .expect("Could not strip suffix")
                                     .to_string(),
                                 None => continue,
                             };
@@ -175,7 +208,10 @@ impl ApkMirror {
                 temp_result["title"] = Value::String(text);
                 temp_result["link"] = Value::String(link);
 
-                results.as_array_mut().unwrap().push(temp_result);
+                results
+                    .as_array_mut()
+                    .expect("Could not get mutable results array")
+                    .push(temp_result);
             }
         }
         pb.finish_with_message("Finished search");
@@ -184,7 +220,6 @@ impl ApkMirror {
     }
 
     pub async fn search(&self, search_query: &str) -> Result<Value, Error> {
-
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -198,12 +233,11 @@ impl ApkMirror {
         search_query: &str,
         version: &str,
     ) -> Result<Value, Error> {
-
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
         ));
-        
+
         Ok(self.extract_root_links(&url, Some(version)).await?)
     }
 
@@ -211,7 +245,7 @@ impl ApkMirror {
         &self,
         url: &str,
         type_: Option<&str>,
-        arch: Option<&str>,
+        arch_: Option<&str>,
         dpi: Option<&str>,
     ) -> Result<Value, Error> {
         let pb = ProgressBar::new(40);
@@ -243,21 +277,22 @@ impl ApkMirror {
                     .map(|element| element.text().collect::<String>())
                     .unwrap_or_default();
 
-                let anchor_elem = table_head_element
+                let anchor_elem = match table_head_element
                     .select(&a_accent_color_download_button_selector)
-                    .next();
-
-                let version = match anchor_elem {
-                    Some(anchor_elem) => anchor_elem.text().collect::<String>().trim().to_string(),
+                    .next()
+                {
+                    Some(anchor_elem) => anchor_elem,
                     None => continue,
                 };
 
-                let download_link = match anchor_elem {
-                    Some(anchor_elem) => {
-                        self.absolute_url(anchor_elem.value().attr("href").unwrap())
-                    }
-                    None => continue,
-                };
+                let version = anchor_elem.text().collect::<String>().trim().to_string();
+
+                let download_link = self.absolute_url(
+                    anchor_elem
+                        .value()
+                        .attr("href")
+                        .expect("Could not get attribute href"),
+                );
 
                 if badge_text != "" && version != "" && download_link != "" {
                     if let Some(type_) = type_ {
@@ -266,24 +301,24 @@ impl ApkMirror {
                             continue;
                         }
                     }
-                    let archstr = table_row_element
+                    let arch: String = table_row_element
                         .select(metadata_selector)
                         .nth(1)
-                        .unwrap()
+                        .expect("Could not get arch string")
                         .text()
                         .collect::<String>()
                         .trim()
                         .to_string();
-                    if let Some(arch) = arch {
-                        if arch != archstr {
-                            pb.set_message(format!("Skipping arch {}", archstr));
+                    if let Some(arch_) = arch_ {
+                        if arch_ != arch {
+                            pb.set_message(format!("Skipping arch {}", arch));
                             continue;
                         }
                     }
                     let screen_dpi = table_row_element
                         .select(metadata_selector)
                         .nth(3)
-                        .unwrap()
+                        .expect("Could not get screen dpi")
                         .text()
                         .collect::<String>()
                         .trim()
@@ -297,22 +332,23 @@ impl ApkMirror {
                     let min_version = table_row_element
                         .select(metadata_selector)
                         .nth(2)
-                        .unwrap()
+                        .expect("Could not get min version")
                         .text()
                         .collect::<String>()
                         .trim()
                         .to_string();
-                    pb.set_message(format!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, archstr, min_version, screen_dpi));
-                    results.as_array_mut().unwrap().push(json_internal!({
-                        "version":version,
-                        "download_link":match self.download_link(&download_link, &pb).await {
-                            Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
-                        },
-                        "type":badge_text,
-                        "arch":archstr,
-                        "min_version":min_version,
-                        "screen_dpi":screen_dpi,
-                    }));
+                    pb.set_message(format!("Found version: {} with type: {} and arch: {} and min_version: {} and screen_dpi: {}", version, badge_text, arch, min_version, screen_dpi));
+                    results.as_array_mut().unwrap_or_else(|| panic!("Could not get mutable results array"))
+                        .push(json_internal!({
+                            "version":version,
+                            "download_link":match self.download_link(&download_link, &pb).await {
+                                Ok(download_link) => download_link, Err(e) => panic!("Something went wrong while getting download link. Err: {}",e),
+                            },
+                            "type":badge_text,
+                            "arch":arch,
+                            "min_version":min_version,
+                            "screen_dpi":screen_dpi,
+                        }));
                 }
             }
         }
@@ -350,7 +386,9 @@ impl ApkMirror {
 
         let final_download_link = match download_link {
             Some(download_link) => {
-                pb.set_message(format!("Found download link page, trying to get final download link"));
+                pb.set_message(format!(
+                    "Found download link page, trying to get final download link"
+                ));
                 let download_link = self.absolute_url(download_link.value().attr("href").unwrap());
 
                 let res = self.client.get(download_link).send().await?.text().await?;
@@ -361,9 +399,16 @@ impl ApkMirror {
 
                 match final_download_link {
                     Some(final_download_link) => {
-                        let final_download_link =
-                            self.absolute_url(final_download_link.value().attr("href").unwrap());
-                        pb.set_message(format!("Found final download link: {}", final_download_link));
+                        let final_download_link = self.absolute_url(
+                            final_download_link
+                                .value()
+                                .attr("href")
+                                .unwrap_or_else(|| panic!("Could not get final download link")),
+                        );
+                        pb.set_message(format!(
+                            "Found final download link: {}",
+                            final_download_link
+                        ));
                         final_download_link.to_string()
                     }
                     None => panic!("No download link found"),
@@ -398,34 +443,40 @@ pub async fn download_file(
     for downlink in downlinks {
         let download_link = downlink
             .as_object()
-            .unwrap()
+            .unwrap_or_else(|| panic!("Could not get download link"))
             .get("download_link")
             .unwrap()
             .as_str()
-            .unwrap();
+            .unwrap_or_else(|| panic!("Could not convert download link to str"));
         let url = download_link;
         let version = downlink
             .as_object()
-            .unwrap()
+            .expect("Could not get version")
             .get("version")
-            .unwrap()
+            .expect("Could not get key version")
             .as_str()
-            .unwrap();
+            .expect("Could not convert version to str");
         let arch = downlink
             .as_object()
-            .unwrap()
+            .expect("Could not get arch")
             .get("arch")
             .unwrap()
             .as_str()
-            .unwrap();
+            .expect("Could not convert arch to str");
         let dpi = downlink
             .as_object()
-            .unwrap()
+            .expect("Could not get screen_dpi")
             .get("screen_dpi")
-            .unwrap()
+            .expect("Could not get key screen_dpi")
             .as_str()
-            .unwrap();
-        let extension = match downlink.as_object().unwrap().get("type").unwrap().as_str().unwrap()
+            .expect("Could not convert screen_dpi to str");
+        let extension = match downlink
+            .as_object()
+            .expect("Couldn't convert downlink to object")
+            .get("type")
+            .expect("Couldn't get type")
+            .as_str()
+            .expect("Couldn't convert type to str")
         {
             "APK" => "apk",
             "BUNDLE" => "apkm",
@@ -433,13 +484,19 @@ pub async fn download_file(
         };
 
         let mut res = reqwest::get(url).await?;
-        let total_size = res.content_length().ok_or("Failed to get content length").unwrap();
+        let total_size = res
+            .content_length()
+            .ok_or("Failed to get content length")
+            .unwrap();
 
         let pb = ProgressBar::new(total_size);
         pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
         pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
-        
-        let output_file = format!("{}_{}_{}_{}.{}", package_name, version, arch, dpi, extension);
+
+        let output_file = format!(
+            "{}_{}_{}_{}.{}",
+            package_name, version, arch, dpi, extension
+        );
         let output_path = format!("{}/{}", output_dir, output_file);
         pb.set_message(format!("File {}", output_file));
         let mut file = File::create(output_path)
@@ -449,7 +506,9 @@ pub async fn download_file(
         let mut downloaded: u64 = 0;
 
         while let Some(chunk) = res.chunk().await.expect("Error while downloading file") {
-            file.write_all(&chunk).await.expect("Error while writing to file");
+            file.write_all(&chunk)
+                .await
+                .expect("Error while writing to file");
 
             let new = min(downloaded + (chunk.len() as u64), total_size);
             downloaded = new;
@@ -505,7 +564,9 @@ mod tests {
         let arch = "armeabi-v7a";
         let type_ = "APK";
         let dpi = "nodpi";
-        let result = downloader.download_by_specifics(url, Some(type_), Some(arch), Some(dpi)).await;
+        let result = downloader
+            .download_by_specifics(url, Some(type_), Some(arch), Some(dpi))
+            .await;
         assert!(result.is_ok());
         let value = result.unwrap();
         assert!(value.is_array());
@@ -542,7 +603,9 @@ mod tests {
                     if filename.contains(partial_filename) {
                         assert!(filename.ends_with(".apk"));
                         // delete file after test
-                        tokio::fs::remove_file(format!("downloads/{}", filename)).await.unwrap();
+                        tokio::fs::remove_file(format!("downloads/{}", filename))
+                            .await
+                            .unwrap();
                         break;
                     }
                 }
@@ -551,5 +614,3 @@ mod tests {
         }
     }
 }
-
-
