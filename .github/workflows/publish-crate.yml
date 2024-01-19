@@ -20,18 +20,17 @@ jobs:
       - name: Cache publish-action bin
         id: cache-publish-action
         uses: actions/cache@v3
-        env:
-          cache-name: cache-publish-action
         with:
           path: ~/.cargo
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-v0.2.3
+          key: ${{ runner.os }}-build-cargo-publish-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Install publish-action
-        if: steps.cache-publish-action.outputs.cache-hit != 'true'
-        run: cargo install publish-action --version=0.2.3
+      - name: Setup cargo
+        run: |
+          rustup update --no-self-update stable
 
       - name: Run publish-action
-        id: publish-action
-        run: publish-action
+        run: |
+          cargo publish --dry-run
+          cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
