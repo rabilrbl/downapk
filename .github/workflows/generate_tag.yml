@@ -1,0 +1,31 @@
+name: Check Cargo.toml version and create release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Cargo.toml'
+
+jobs:
+  check-version-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+
+      - name: Check if version exists as tag
+        id: check-version
+        run: |
+          VERSION=v$(grep -oP '^version = "\K[^"]+' Cargo.toml)
+          if git tag --list | grep -q "^$VERSION$"; then
+            echo "Tag $VERSION already exists"
+          else
+            echo "Tag $VERSION does not exist"
+            git tag $VERSION
+            git push origin $VERSION
+            echo "Created tag $VERSION and pushed to origin"
+          fi
