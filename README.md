@@ -64,6 +64,8 @@ downapk [OPTIONS] --package-id <PACKAGE_ID>
    downapk -p com.google.android.youtube -t apk -a universal -d nodpi -v 14.21.54
    ```
 
+For library usage, see [Rust docs](https://docs.rs/downapk) with examples.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) file for details.
