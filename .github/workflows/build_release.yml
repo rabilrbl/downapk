@@ -17,9 +17,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-musl
-            filename: downapk-linux-x86_64
           - os: windows-latest
             target: x86_64-pc-windows-gnullvm
             filename: downapk-windows-x86_64.exe
@@ -87,6 +84,8 @@ jobs:
     strategy:
       matrix:
         include:
+          - target: x86_64-unknown-linux-musl
+            filename: downapk-linux-x86_64
           - target: aarch64-unknown-linux-musl
             filename: downapk-linux-aarch64
           - target: aarch64-linux-android
