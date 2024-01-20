@@ -20,7 +20,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             filename: downapk-linux-x86_64
-          - os: ubuntu-latest
+          - os: windows-latest
             target: x86_64-pc-windows-gnu
             filename: downapk-windows-x86_64.exe
             extension: .exe
