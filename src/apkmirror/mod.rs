@@ -621,7 +621,6 @@ pub async fn multiple_file_download(
     package_name: &str,
     output_dir: &str,
 ) -> Result<(), Error> {
-
     for item in downlinks {
         single_file_download(item, package_name, output_dir).await?;
     }

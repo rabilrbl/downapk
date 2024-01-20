@@ -1,7 +1,7 @@
 mod apkmirror;
 mod utils;
 
-use apkmirror::{single_file_download, multiple_file_download, ApkMirror};
+use apkmirror::{multiple_file_download, single_file_download, ApkMirror};
 use clap::Parser;
 
 /// Program to download APKs of given Android package ID
@@ -52,7 +52,7 @@ struct Args {
     /// Possible values: 1, 2, 3, ...
     /// Default: None. User will be prompted to choose an index
     #[arg(short('i'), long)]
-    download_index: Option<usize>, 
+    download_index: Option<usize>,
 }
 
 #[tokio::main]
@@ -95,14 +95,23 @@ async fn main() {
     let choice = args.search_index.unwrap_or_else(|| {
         // print all results.i.link with number
         for (i, result) in results.iter().enumerate() {
-            println!("{}. {} {} {}", i + 1, result.title, result.uploaded, result.file_size);
+            println!(
+                "{}. {} {} {}",
+                i + 1,
+                result.title,
+                result.uploaded,
+                result.file_size
+            );
         }
         read_input("Choose a number from above to download:")
     });
 
     // make sure choice is within range of results
     if choice > results.len() {
-        panic!("Invalid search index. Choose a number from 1 to {}", results.len());
+        panic!(
+            "Invalid search index. Choose a number from 1 to {}",
+            results.len()
+        );
     }
     let download_url = &results[choice - 1].link.clone();
     let download_result = apkmirror
@@ -115,25 +124,24 @@ async fn main() {
     let choice: usize = match download_result.len() {
         0 => {
             panic!("No apk files found for download. Retry again after some time");
-        },
-        1 => {
-            2
-        },
+        }
+        1 => 2,
         _ => {
             let choice_ = match args.download_option {
-                Some(ref option) => {
-                    match option.as_str() {
-                        "all" => 2,
-                        "one" => 1,
-                        _ => panic!("Invalid download option `{}`. Possible values all or one", choice),
-                    }
+                Some(ref option) => match option.as_str() {
+                    "all" => 2,
+                    "one" => 1,
+                    _ => panic!(
+                        "Invalid download option `{}`. Possible values all or one",
+                        choice
+                    ),
                 },
                 None => {
                     println!("There are multiple apk files available for download");
                     println!("1. Download one specific file");
                     println!("2. Download all files");
                     read_input("Choose a number from above:")
-                },
+                }
             };
             choice_
         }
@@ -144,31 +152,39 @@ async fn main() {
         1 => {
             let choice = args.download_index.unwrap_or_else(|| {
                 for (i, result) in download_result.iter().enumerate() {
-                    println!("{}. {} {} {} {} {}", i + 1, result.version, result.type_, result.arch, result.screen_dpi, result.min_version);
-                };
+                    println!(
+                        "{}. {} {} {} {} {}",
+                        i + 1,
+                        result.version,
+                        result.type_,
+                        result.arch,
+                        result.screen_dpi,
+                        result.min_version
+                    );
+                }
                 read_input("Choose a number from above to download:")
             });
 
             // make sure choice is within range of download_result
             if choice > download_result.len() {
-                panic!("Invalid download index. Choose a number from 1 to {}", download_result.len());
+                panic!(
+                    "Invalid download index. Choose a number from 1 to {}",
+                    download_result.len()
+                );
             }
-        
-            match single_file_download(&download_result[choice-1], &package_id, &output_dir).await {
+
+            match single_file_download(&download_result[choice - 1], &package_id, &output_dir).await
+            {
                 Ok(_) => println!("Downloaded successfully"),
                 Err(e) => panic!("Error while downloading. Err: {}", e),
             }
-        },
-        2 => {
-            match multiple_file_download(&download_result, &package_id, &output_dir).await {
-                Ok(_) => println!("Downloaded successfully"),
-                Err(e) => panic!("Error while downloading. Err: {}", e),
-            }
+        }
+        2 => match multiple_file_download(&download_result, &package_id, &output_dir).await {
+            Ok(_) => println!("Downloaded successfully"),
+            Err(e) => panic!("Error while downloading. Err: {}", e),
         },
         _ => println!("Invalid choice"),
     }
-
-    
 }
 
 fn read_input(msg: &str) -> usize {
