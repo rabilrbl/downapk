@@ -64,7 +64,7 @@ jobs:
             downapk${{ matrix.extension }}
             ../../../README.md
             ../../../LICENSE
-          outPath: downapk.tar.gz
+          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
@@ -136,7 +136,7 @@ jobs:
             downapk
             ../../../README.md
             ../../../LICENSE
-          outPath: downapk.tar.gz
+          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
