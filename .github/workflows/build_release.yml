@@ -12,13 +12,13 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-common-archs:
+  native-build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
-            target: x86_64-pc-windows-gnullvm
+            target: x86_64-pc-windows-msvc
             filename: downapk-windows-x86_64.exe
             extension: .exe
           - os: macos-latest
@@ -79,7 +79,7 @@ jobs:
           tag: ${{ github.ref }}
           file_glob: false
 
-  build-extra-archs:
+  cross-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -152,7 +152,7 @@ jobs:
           file_glob: false
 
   publish:
-    needs: [build-common-archs, build-extra-archs]
+    needs: [native-build, cross-build]
     runs-on: ubuntu-latest
     name: "Publish to Cargo"
     environment: 
