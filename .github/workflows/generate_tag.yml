@@ -28,4 +28,7 @@ jobs:
             git tag $VERSION
             git push origin $VERSION
             echo "Created tag $VERSION and pushed to origin"
+            gh release create $VERSION --generate-notes
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}

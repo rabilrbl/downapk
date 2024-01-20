@@ -3,9 +3,6 @@ name: Build and Release
 on:
   release:
     types: [created]
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
 
 permissions:
@@ -66,13 +63,31 @@ jobs:
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Compress action step
+        uses: a7ul/tar-action@master
+        with:
+          command: c
+          files: |
+            README.md
+            LICENSE
+            target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
+          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
-        if: contains(matrix.target, 'windows') == true
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
           asset_name: ${{ matrix.filename }}
+          tag: ${{ github.ref }}
+          file_glob: false
+
+      - name: Upload tar.gz to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/downapk.tar.gz
+          asset_name: downapk-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
           tag: ${{ github.ref }}
           file_glob: false
 
@@ -119,13 +134,31 @@ jobs:
       - name: Build ${{ matrix.target }}
         run: cross build --release --target ${{ matrix.target }}
 
+      - name: Compress action step
+        uses: a7ul/tar-action@master
+        with:
+          command: c
+          files: |
+            README.md
+            LICENSE
+            target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
+          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
+
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
-        if: contains(matrix.target, 'windows') == false
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk
           asset_name: ${{ matrix.filename }}
+          tag: ${{ github.ref }}
+          file_glob: false
+
+      - name: Upload tar.gz to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: target/${{ matrix.target }}/release/downapk.tar.gz
+          asset_name: downapk-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
           tag: ${{ github.ref }}
           file_glob: false
 
