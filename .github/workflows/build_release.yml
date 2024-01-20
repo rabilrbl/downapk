@@ -21,7 +21,7 @@ jobs:
             target: x86_64-unknown-linux-gnu
             filename: downapk-linux-x86_64
           - os: windows-latest
-            target: x86_64-pc-windows-gnu
+            target: x86_64-pc-windows-msvc
             filename: downapk-windows-x86_64.exe
             extension: .exe
           - os: macos-latest
