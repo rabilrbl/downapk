@@ -17,8 +17,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
+          - os: ubuntu-latest
+            target: x86_64-pc-windows-gnu
             filename: downapk-windows-x86_64.exe
             extension: .exe
           - os: macos-latest
