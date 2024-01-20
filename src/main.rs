@@ -1,8 +1,8 @@
 mod apkmirror;
 mod utils;
 
+use apkmirror::{download_file, ApkMirror};
 use clap::Parser;
-use apkmirror::{ApkMirror, download_file};
 
 /// Program to download APKs of given Android package ID
 #[derive(Parser, Debug)]
@@ -74,21 +74,21 @@ async fn main() {
         }
     };
 
-    let download_url = results[0].link.as_str();
-    let download_result = apkmirror
-        .download_by_specifics(download_url, type_, arch, dpi)
-        .await;
+    for result in results {
+        let download_url = result.link.as_str();
+        let download_result = apkmirror
+            .download_by_specifics(download_url, type_, arch, dpi)
+            .await;
 
-    match download_result {
-        Ok(download_result) => {
-            download_file(&download_result, &package_id,&output_dir).await.unwrap_or_else(
-                |err| {
+        match download_result {
+            Ok(download_result) => download_file(&download_result, &package_id, &output_dir)
+                .await
+                .unwrap_or_else(|err| {
                     panic!("Could not download file: {}", err);
-                },
-            )
-        }
-        Err(err) => {
-            panic!("Error: {}", err);
+                }),
+            Err(err) => {
+                panic!("Error: {}", err);
+            }
         }
     }
 }
