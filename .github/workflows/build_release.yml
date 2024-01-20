@@ -87,7 +87,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk.tar.gz
-          asset_name: downapk-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
+          asset_name: downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
           tag: ${{ github.ref }}
           file_glob: false
 
@@ -158,7 +158,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk.tar.gz
-          asset_name: downapk-${{ github.event.release.tag_name }}-${{ matrix.target }}.tar.gz
+          asset_name: downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
           tag: ${{ github.ref }}
           file_glob: false
 
