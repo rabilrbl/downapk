@@ -1,6 +1,6 @@
 [package]
 name = "downapk"
-version = "0.4.9"
+version = "0.5.0"
 edition = "2021"
 categories = ["command-line-utilities"]
 description = "Program to download APKs of given Android package"
