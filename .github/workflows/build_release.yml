@@ -62,8 +62,8 @@ jobs:
           cwd: target/${{ matrix.target }}/release
           files: |
             downapk${{ matrix.extension }}
-            ../../../../README.md
-            ../../../../LICENSE
+            ../../../README.md
+            ../../../LICENSE
           outPath: downapk.tar.gz
 
       - name: Upload binaries to release
@@ -134,8 +134,8 @@ jobs:
           cwd: target/${{ matrix.target }}/release
           files: |
             downapk
-            ../../../../README.md
-            ../../../../LICENSE
+            ../../../README.md
+            ../../../LICENSE
           outPath: downapk.tar.gz
 
       - name: Upload binaries to release
