@@ -24,14 +24,6 @@ jobs:
             target: x86_64-pc-windows-msvc
             filename: downapk-windows-x86_64.exe
             extension: .exe
-          - os: windows-latest
-            target: i686-pc-windows-msvc
-            filename: downapk-windows-i686.exe
-            extension: .exe
-          - os: windows-latest
-            target: aarch64-pc-windows-msvc
-            filename: downapk-windows-aarch64.exe
-            extension: .exe
           - os: macos-latest
             target: x86_64-apple-darwin
             filename: downapk-darwin-x86_64
