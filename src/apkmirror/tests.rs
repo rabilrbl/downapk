@@ -58,8 +58,8 @@ async fn test_download() {
         assert_eq!(item.screen_dpi, dpi.to_string());
     }
 
-    match download_file(
-        &download_apkmirror_result,
+    match single_file_download(
+        &download_apkmirror_result[0],
         "com.instagram.lite",
         "downloads",
     )

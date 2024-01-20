@@ -546,14 +546,14 @@ impl ApkMirror {
     /// Gets the final direct file download link from the specified URL.
     /// This method is used internally by `download_by_specifics`.
     /// It is recommended to use `download_by_specifics` instead of this method.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `url` - The URL to get the final download link from.
     /// * `pb` - The progress bar to use.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// A `Result` containing the final download link or an `Error` if the download link could not be found.
     async fn download_link(&self, url: &str, pb: &ProgressBar) -> Result<String, Error> {
         pb.set_message(format!("Trying to get download page link from {}", url));
@@ -604,36 +604,61 @@ impl ApkMirror {
     // ... other methods here ...
 }
 
-/// Downloads APK files from APKMirror based on the provided DownloadApkMirror structs.
+/// Downloads multiple APK files from APKMirror based on the provided vector of DownloadApkMirror structs.
+/// Iterates over the vector and calls single_file_download for each item.
+///
+/// # Arguments
+///
+/// * `downlinks` - The vector of DownloadApkMirror structs to download.
+/// * `package_name` - The package name of the APK file.
+/// * `output_dir` - The output directory to download the APK files to.
+///
+/// # Returns
+///
+/// A `Result` containing `()` or an `Error` if the download fails.
+pub async fn multiple_file_download(
+    downlinks: &Vec<DownloadApkMirror>,
+    package_name: &str,
+    output_dir: &str,
+) -> Result<(), Error> {
+
+    for item in downlinks {
+        single_file_download(item, package_name, output_dir).await?;
+    }
+
+    Ok(())
+}
+
+/// Downloads APK files from APKMirror based on the provided DownloadApkMirror.
 /// Creates the output directory if it doesn't exist.
 /// Downloads each file to the output directory, using the package name, version, arch, dpi
 /// and extension to construct a filename.
 /// Shows a progress bar while downloading.
-/// 
+///
 /// # Arguments
-/// 
-/// * `downlinks` - The vector of DownloadApkMirror structs to download.
+///
+/// * `item` - The DownloadApkMirror struct to download.
 /// * `package_name` - The package name of the APK file.
 /// * `output_dir` - The output directory to download the APK files to.
-/// 
+///
 /// # Returns
-/// 
+///
 /// A `Result` containing `()` or an `Error` if the download fails.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
-/// use downapk::apkmirror::{ApkMirror, download_file};
-/// 
+/// use downapk::apkmirror::{ApkMirror, single_file_download};
+///
 /// #[tokio::main]
 /// async fn main() {
 ///    let apk_mirror = ApkMirror::new().await;
 ///   let downloads = apk_mirror._download_by_arch("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("arm64-v8a")).await.unwrap();
-///  download_file(&downloads, "com.instagram.lite", "downloads").await.unwrap();
+///  single_file_download(&downloads[0], "com.instagram.lite", "downloads").await.unwrap();
 /// }
 /// ```
-pub async fn download_file(
-    downlinks: &Vec<DownloadApkMirror>,
+pub async fn single_file_download(
+    item: &DownloadApkMirror,
     package_name: &str,
     output_dir: &str,
 ) -> Result<(), Error> {
@@ -649,53 +674,50 @@ pub async fn download_file(
             }
         }
     };
-    for item in downlinks {
-        let url = &item.download_link;
-        let version = &item.version;
-        let arch = &item.arch;
-        let dpi = &item.screen_dpi;
-        let extension = match item.type_.as_str() {
-            "APK" => "apk",
-            "BUNDLE" => "apkm",
-            ext => panic!("Got an unknown apk type: {}", ext),
-        };
 
-        let mut res = reqwest::get(url).await?;
-        let total_size = res
-            .content_length()
-            .unwrap_or_default();
+    let url = &item.download_link;
+    let version = &item.version;
+    let arch = &item.arch;
+    let dpi = &item.screen_dpi;
+    let extension = match item.type_.as_str() {
+        "APK" => "apk",
+        "BUNDLE" => "apkm",
+        ext => panic!("Got an unknown apk type: {}", ext),
+    };
 
-        let pb = match total_size {
-            0 => ProgressBar::new(100),
-            _ => ProgressBar::new(total_size),
-        };
-        pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
-        pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
+    let mut res = reqwest::get(url).await?;
+    let total_size = res.content_length().unwrap_or_default();
 
-        let output_file = format!(
-            "{}_{}_{}_{}.{}",
-            package_name, version, arch, dpi, extension
-        );
-        let output_path = format!("{}/{}", output_dir, output_file);
-        pb.set_message(format!("File {}", output_file));
-        let mut file = File::create(output_path)
+    let pb = match total_size {
+        0 => ProgressBar::new(100),
+        _ => ProgressBar::new(total_size),
+    };
+    pb.set_prefix(format!(" {} Downloading", DOWNLOAD_EMOJI));
+    pb.set_style(ProgressStyle::default_bar().template("{msg}\n{spinner:.green} [{elapsed_precise}] [{wide_bar:.cyan/blue}] {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
+
+    let output_file = format!(
+        "{}_{}_{}_{}.{}",
+        package_name, version, arch, dpi, extension
+    );
+    let output_path = format!("{}/{}", output_dir, output_file);
+    pb.set_message(format!("File {}", output_file));
+    let mut file = File::create(output_path)
+        .await
+        .expect("Failed to create file");
+
+    let mut downloaded: u64 = 0;
+
+    while let Some(chunk) = res.chunk().await.expect("Error while downloading file") {
+        file.write_all(&chunk)
             .await
-            .expect("Failed to create file");
+            .expect("Error while writing to file");
 
-        let mut downloaded: u64 = 0;
-
-        while let Some(chunk) = res.chunk().await.expect("Error while downloading file") {
-            file.write_all(&chunk)
-                .await
-                .expect("Error while writing to file");
-
-            let new = min(downloaded + (chunk.len() as u64), total_size);
-            downloaded = new;
-            pb.set_position(new);
-        }
-
-        pb.finish_with_message(format!("Finished downloading file {}", output_file));
+        let new = min(downloaded + (chunk.len() as u64), total_size);
+        downloaded = new;
+        pb.set_position(new);
     }
+
+    pb.finish_with_message(format!("Finished downloading file {}", output_file));
 
     Ok(())
 }

@@ -1,7 +1,7 @@
 mod apkmirror;
 mod utils;
 
-use apkmirror::{download_file, ApkMirror};
+use apkmirror::{single_file_download, multiple_file_download, ApkMirror};
 use clap::Parser;
 
 /// Program to download APKs of given Android package ID
@@ -74,21 +74,54 @@ async fn main() {
         }
     };
 
-    for result in results {
-        let download_url = result.link.as_str();
-        let download_result = apkmirror
-            .download_by_specifics(download_url, type_, arch, dpi)
-            .await;
-
-        match download_result {
-            Ok(download_result) => download_file(&download_result, &package_id, &output_dir)
-                .await
-                .unwrap_or_else(|err| {
-                    panic!("Could not download file: {}", err);
-                }),
-            Err(err) => {
-                panic!("Error: {}", err);
-            }
-        }
+    // print all results.i.link with number
+    for (i, result) in results.iter().enumerate() {
+        println!("{}. {} {} {}", i + 1, result.title, result.uploaded, result.file_size);
     }
+    let choice = read_input("Enter the index of the link from above you want to download:");
+    let download_url = &results[choice - 1].link.clone();
+    let download_result = apkmirror
+        .download_by_specifics(download_url, type_, arch, dpi)
+        .await
+        .unwrap_or_else(|err| {
+            panic!("Error while calling download_by_specifics. Err {}", err);
+        });
+
+    println!("1. Download one specific file");
+    println!("2. Download all files");
+    let choice = read_input("Choose an option from above:");
+    println!();
+    match choice {
+        1 => {
+            for (i, result) in download_result.iter().enumerate() {
+                println!("{}. {} {} {} {} {}", i + 1, result.version, result.type_, result.arch, result.screen_dpi, result.min_version);
+            }
+            let choice = read_input("Choose a number from above to download:");
+        
+            match single_file_download(&download_result[choice-1], &package_id, &output_dir).await {
+                Ok(_) => println!("Downloaded successfully"),
+                Err(e) => panic!("Error while downloading. Err: {}", e),
+            }
+        },
+        2 => {
+            match multiple_file_download(&download_result, &package_id, &output_dir).await {
+                Ok(_) => println!("Downloaded successfully"),
+                Err(e) => panic!("Error while downloading. Err: {}", e),
+            }
+        },
+        _ => println!("Invalid choice"),
+    }
+
+    
+}
+
+fn read_input(msg: &str) -> usize {
+    println!("{}", msg);
+    let mut input = String::new();
+    std::io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read input");
+    input.trim().parse().unwrap_or_else(|err| {
+        panic!("Error parsing input: {}", err);
+    })
 }
