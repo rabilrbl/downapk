@@ -1,4 +1,4 @@
-name: Check Cargo.toml version and create tag
+name: Create release from version
 
 on:
   push:
