@@ -33,8 +33,26 @@ struct Args {
 
     /// Optional: Screen DPI
     /// Possible values: nodpi, 120-320, ..., all
-    #[arg(short, long, default_value_t = String::from("all"))]
+    #[arg(long, default_value_t = String::from("all"))]
     dpi: String,
+
+    /// Optional: Search Index to download
+    /// Possible values: 1, 2, 3, ...
+    /// Default: None. User will be prompted to choose an index
+    #[arg(short, long)]
+    search_index: Option<usize>,
+
+    /// Optional: Whether to download all apks or one from final download page
+    /// Possible values: one, all
+    /// Default: None. User will be prompted to choose an index
+    #[arg(short, long)]
+    download_option: Option<String>,
+
+    /// If download option is `one` then this is the index of the apk to download
+    /// Possible values: 1, 2, 3, ...
+    /// Default: None. User will be prompted to choose an index
+    #[arg(short('i'), long)]
+    download_index: Option<usize>, 
 }
 
 #[tokio::main]
@@ -74,11 +92,18 @@ async fn main() {
         }
     };
 
-    // print all results.i.link with number
-    for (i, result) in results.iter().enumerate() {
-        println!("{}. {} {} {}", i + 1, result.title, result.uploaded, result.file_size);
+    let choice = args.search_index.unwrap_or_else(|| {
+        // print all results.i.link with number
+        for (i, result) in results.iter().enumerate() {
+            println!("{}. {} {} {}", i + 1, result.title, result.uploaded, result.file_size);
+        }
+        read_input("Choose a number from above to download:")
+    });
+
+    // make sure choice is within range of results
+    if choice > results.len() {
+        panic!("Invalid search index. Choose a number from 1 to {}", results.len());
     }
-    let choice = read_input("Enter the index of the link from above you want to download:");
     let download_url = &results[choice - 1].link.clone();
     let download_result = apkmirror
         .download_by_specifics(download_url, type_, arch, dpi)
@@ -87,16 +112,47 @@ async fn main() {
             panic!("Error while calling download_by_specifics. Err {}", err);
         });
 
-    println!("1. Download one specific file");
-    println!("2. Download all files");
-    let choice = read_input("Choose an option from above:");
+    let choice: usize = match download_result.len() {
+        0 => {
+            panic!("No apk files found for download. Retry again after some time");
+        },
+        1 => {
+            2
+        },
+        _ => {
+            let choice_ = match args.download_option {
+                Some(ref option) => {
+                    match option.as_str() {
+                        "all" => 2,
+                        "one" => 1,
+                        _ => panic!("Invalid download option `{}`. Possible values all or one", choice),
+                    }
+                },
+                None => {
+                    println!("There are multiple apk files available for download");
+                    println!("1. Download one specific file");
+                    println!("2. Download all files");
+                    read_input("Choose a number from above:")
+                },
+            };
+            choice_
+        }
+    };
+
     println!();
     match choice {
         1 => {
-            for (i, result) in download_result.iter().enumerate() {
-                println!("{}. {} {} {} {} {}", i + 1, result.version, result.type_, result.arch, result.screen_dpi, result.min_version);
+            let choice = args.download_index.unwrap_or_else(|| {
+                for (i, result) in download_result.iter().enumerate() {
+                    println!("{}. {} {} {} {} {}", i + 1, result.version, result.type_, result.arch, result.screen_dpi, result.min_version);
+                };
+                read_input("Choose a number from above to download:")
+            });
+
+            // make sure choice is within range of download_result
+            if choice > download_result.len() {
+                panic!("Invalid download index. Choose a number from 1 to {}", download_result.len());
             }
-            let choice = read_input("Choose a number from above to download:");
         
             match single_file_download(&download_result[choice-1], &package_id, &output_dir).await {
                 Ok(_) => println!("Downloaded successfully"),
