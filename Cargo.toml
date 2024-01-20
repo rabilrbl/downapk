@@ -24,11 +24,6 @@ tokio = { version = "1.35", features = ["full"] }
 [profile.release]
 strip = true
 
-[package.metadata.binstall]
-pkg-url = "{ repo }/releases/download/v{ version }/{ name }-{ target }-v{ version }{ archive-suffix }"
-bin-dir = "{ name }-{ target }-v{ version }/{ bin }{ binary-ext }"
-pkg-fmt = "tgz"
-
 [target.'cfg(target_arch = "aarch64")']
 pre-build = "./scripts/prebuild.sh"
 
