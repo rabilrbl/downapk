@@ -59,11 +59,12 @@ jobs:
         uses: a7ul/tar-action@master
         with:
           command: c
+          cwd: target/${{ matrix.target }}/release
           files: |
-            README.md
-            LICENSE
-            target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
-          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
+            downapk${{ matrix.extension }}
+            ../../../../README.md
+            ../../../../LICENSE
+          outPath: downapk.tar.gz
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
@@ -130,11 +131,12 @@ jobs:
         uses: a7ul/tar-action@master
         with:
           command: c
+          cwd: target/${{ matrix.target }}/release
           files: |
-            README.md
-            LICENSE
-            target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
-          outPath: target/${{ matrix.target }}/release/downapk.tar.gz
+            downapk
+            ../../../../README.md
+            ../../../../LICENSE
+          outPath: downapk.tar.gz
 
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
