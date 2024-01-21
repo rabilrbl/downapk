@@ -19,18 +19,10 @@ indicatif = "^0.17"
 reqwest = { version = "^0.11", features = ["cookies"] }
 scraper = "^0.18"
 tokio = { version = "^1.35", features = ["full"] }
+openssl = { version = "^0.10", features = ["vendored"] }
 
 [build]
 dockerfile = "./docker/cross-Dockerfile"
-
-[target.'cfg(target_arch = "aarch64")'.dependencies]
-openssl = { version = "^0.10", features = ["vendored"] }
-
-[target.'cfg(target_arch = "arm")'.dependencies]
-openssl = { version = "^0.10", features = ["vendored"] }
-
-[target.'cfg(target_arch = "i686")'.dependencies]
-openssl = { version = "^0.10", features = ["vendored"] }
 
 [profile.release]
 strip = true
