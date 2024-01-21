@@ -16,10 +16,9 @@ repository = "https://github.com/rabilrbl/downapk"
 clap = { version = "^4.4", features = ["derive"] }
 console = "^0.15"
 indicatif = "^0.17"
-reqwest = { version = "^0.11", features = ["cookies"] }
+reqwest = { version = "^0.11", default-features = false, features = ["cookies", "rustls-tls-native-roots"] }
 scraper = "^0.18"
 tokio = { version = "^1.35", features = ["full"] }
-openssl = { version = "^0.10", features = ["vendored"] }
 
 [profile.release]
 strip = true
