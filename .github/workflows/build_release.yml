@@ -52,17 +52,15 @@ jobs:
           cache-directories: |
             C:\Users\runneradmin\.cargo
             /Users/runner/.cargo
+        
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
-          asset_name: downapk-${{ matrix.target }}${{ matrix.extension }}
-          tag: ${{ github.ref }}
-          file_glob: false
+        run: |
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk${{ matrix.extension }}%#%downapk-${{ matrix.target }}${{ matrix.extension }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   cross-build:
     runs-on: ubuntu-latest
@@ -103,13 +101,10 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk
-          asset_name: downapk-${{ matrix.target }}
-          tag: ${{ github.ref }}
-          file_glob: false
+        run: |
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk%#%downapk-${{ matrix.target }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     needs: [native-build, cross-build]
