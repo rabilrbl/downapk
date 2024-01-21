@@ -24,14 +24,5 @@ tokio = { version = "^1.35", features = ["full"] }
 [profile.release]
 strip = true
 
-[target.'cfg(target_arch = "aarch64")']
-pre-build = "./scripts/prebuild.sh"
-
-[target.'cfg(target_arch = "arm")']
-pre-build = "./scripts/prebuild.sh"
-
-[target.'cfg(target_arch = "i686")']
-pre-build = "./scripts/prebuild.sh"
-
 [package.metadata.binstall]
 bin-dir = "{ bin }-{ target }{ binary-ext }"
