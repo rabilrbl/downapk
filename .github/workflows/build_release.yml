@@ -58,7 +58,8 @@ jobs:
 
       - name: Upload binaries to release
         run: |
-            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk${{ matrix.extension }} %#% downapk-${{ matrix.target }}${{ matrix.extension }}
+            mv target/${{ matrix.target }}/release/downapk${{ matrix.extension }} target/${{ matrix.target }}/release/downapk-${{ matrix.target }}${{ matrix.extension }}
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk-${{ matrix.target }}${{ matrix.extension }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -101,8 +102,10 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Upload binaries to release
+        shell: bash
         run: |
-            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk %#% downapk-${{ matrix.target }}
+            mv target/${{ matrix.target }}/release/downapk target/${{ matrix.target }}/release/downapk-${{ matrix.target }}
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk-${{ matrix.target }} 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
