@@ -23,7 +23,7 @@ tokio = { version = "^1.35", features = ["full"] }
 [target.'cfg(target_arch = "aarch64")'.build-dependencies]
 openssl = { version = "^0.10", features = ["vendored"] }
 
-[target.'cfg(target_arch = "arm")'.build-dependencies]
+[target.'cfg(target_arch = "armv7")'.build-dependencies]
 openssl = { version = "^0.10", features = ["vendored"] }
 
 [target.'cfg(target_arch = "i686")'.build-dependencies]
