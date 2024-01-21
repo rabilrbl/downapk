@@ -188,6 +188,11 @@ impl ApkMirror {
         }
     }
 
+    /// Constructs an absolute URL by prepending the host if the provided
+    /// URL does not already start with http.
+    ///
+    /// This handles cases where a relative URL path is provided and constructs
+    /// a full, absolute URL to use for requests.
     fn absolute_url(&self, url: &str) -> String {
         if url.starts_with("http") {
             url.to_string()
