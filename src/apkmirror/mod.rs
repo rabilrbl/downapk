@@ -1,9 +1,10 @@
+use crate::errors::DownApkError;
 use crate::utils::selector;
 use console::Emoji;
 use core::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 use reqwest::header::{HeaderMap, HeaderValue};
-use reqwest::{Client, Error};
+use reqwest::Client;
 use scraper::Html;
 use std::cmp::min;
 use tokio::fs::File;
@@ -96,10 +97,10 @@ impl ApkMirror {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let apk_mirror = ApkMirror::new().await.unwrap();
     /// }
     /// ```
-    pub async fn new() -> Self {
+    pub async fn new() -> Result<Self, DownApkError<'static>> {
         let mut headers = HeaderMap::new();
         headers.insert(reqwest::header::ACCEPT, HeaderValue::from_static("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"));
         headers.insert(
@@ -128,21 +129,9 @@ impl ApkMirror {
         let client = Client::builder()
             .cookie_store(true)
             .default_headers(headers)
-            .build()
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Something went wrong while creating reqwest client. Err: {}",
-                    e
-                )
-            });
+            .build()?;
 
-        let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Something went wrong while creating spinner style. Err: {}",
-                    e
-                )
-            })
+        let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")?
             .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
 
         let pb = ProgressBar::new(40);
@@ -155,37 +144,25 @@ impl ApkMirror {
         let res = client
             .get(&(url.clone() + "/"))
             .send()
-            .await
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Something went wrong while making request for cookies. Err: {}",
-                    e
-                )
-            })
+            .await?
             .text()
-            .await
-            .unwrap_or_else(|e| {
-                panic!(
-                    "Something went wrong while unwrapping response text. Err: {}",
-                    e
-                )
-            });
+            .await?;
 
         pb.set_message("Got some cookies, parsing html");
         let document = Html::parse_document(&res);
 
         pb.set_message("Parsing html to check if page is valid");
-        let selector = selector("button[class='searchButton']");
+        let selector = selector("button[class='searchButton']")?;
 
         assert_eq!(1, document.select(&selector).count());
 
         pb.finish_with_message("Finished getting valid cookies");
 
-        ApkMirror {
+        Ok(ApkMirror {
             client,
             host: url,
             spinner: spinner_style,
-        }
+        })
     }
 
     /// Constructs an absolute URL by prepending the host if the provided
@@ -219,7 +196,7 @@ impl ApkMirror {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let apk_mirror = ApkMirror::new().await.unwrap();
     ///     let links = apk_mirror.extract_root_links("https://www.apkmirror.com/apk/instagram/instagram-lite/", Some("390.0.0.9.116")).await;
     /// }
     /// ```
@@ -227,7 +204,7 @@ impl ApkMirror {
         &self,
         url: &str,
         version: Option<&str>,
-    ) -> Result<Vec<ExtractedLink>, Error> {
+    ) -> Result<Vec<ExtractedLink>, DownApkError> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
@@ -245,13 +222,13 @@ impl ApkMirror {
         pb.set_message("Parsing html");
         let document = Html::parse_document(&res);
 
-        let list_widget_selector = selector("div.listWidget");
-        let div_without_class_selector = selector("div:not([class])");
-        let link_selector = selector("a[class='fontBlack']");
-        let info_selector = selector("div.infoSlide.t-height");
-        let paragraph_selector = selector("p");
-        let info_name_selector = selector("span.infoSlide-name");
-        let info_value_selector = selector("span.infoSlide-value");
+        let list_widget_selector = selector("div.listWidget")?;
+        let div_without_class_selector = selector("div:not([class])")?;
+        let link_selector = selector("a[class='fontBlack']")?;
+        let info_selector = selector("div.infoSlide.t-height")?;
+        let paragraph_selector = selector("p")?;
+        let info_name_selector = selector("span.infoSlide-name")?;
+        let info_value_selector = selector("span.infoSlide-value")?;
 
         let mut results: Vec<ExtractedLink> = vec![];
 
@@ -347,11 +324,11 @@ impl ApkMirror {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let apk_mirror = ApkMirror::new().await.unwrap();
     ///     let results = apk_mirror.search("com.instagram.lite").await;
     /// }
     /// ```
-    pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLink>, Error> {
+    pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLink>, DownApkError> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -378,7 +355,7 @@ impl ApkMirror {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let apk_mirror = ApkMirror::new().await.unwrap();
     ///     let results = apk_mirror.search_by_version("com.instagram.lite", "390.0.0.9.116").await;
     /// }
     /// ```
@@ -386,7 +363,7 @@ impl ApkMirror {
         &self,
         search_query: &str,
         version: &str,
-    ) -> Result<Vec<ExtractedLink>, Error> {
+    ) -> Result<Vec<ExtractedLink>, DownApkError> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -415,7 +392,7 @@ impl ApkMirror {
     ///
     /// #[tokio::main]
     /// async fn main() {
-    ///     let apk_mirror = ApkMirror::new().await;
+    ///     let apk_mirror = ApkMirror::new().await.unwrap();
     ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("APK"), Some("arm64-v8a"), Some("nodpi")).await;
     /// }
     /// ```
@@ -425,7 +402,7 @@ impl ApkMirror {
         type_: Option<&str>,
         arch_: Option<&str>,
         dpi: Option<&str>,
-    ) -> Result<Vec<DownloadApkMirror>, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Get file download links", TRUCK));
@@ -435,12 +412,12 @@ impl ApkMirror {
 
         let document = Html::parse_document(&res);
 
-        let table_row_selector = selector("div[class='table-row headerFont']");
+        let table_row_selector = selector("div[class='table-row headerFont']")?;
         let table_head_selector =
-            selector("div[class='table-cell rowheight addseparator expand pad dowrap']");
-        let span_apkm_badge_selector = selector("span.apkm-badge");
-        let a_accent_color_download_button_selector = selector("a[class='accent_color']");
-        let metadata_selector = &selector("div");
+            selector("div[class='table-cell rowheight addseparator expand pad dowrap']")?;
+        let span_apkm_badge_selector = selector("span.apkm-badge")?;
+        let a_accent_color_download_button_selector = selector("a[class='accent_color']")?;
+        let metadata_selector = &selector("div")?;
         let mut results: Vec<DownloadApkMirror> = vec![];
 
         pb.set_message("Processing each link");
@@ -541,7 +518,7 @@ impl ApkMirror {
         &self,
         url: &str,
         arch: Option<&str>,
-    ) -> Result<Vec<DownloadApkMirror>, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
         self.download_by_specifics(url, None, arch, None).await
     }
 
@@ -551,7 +528,7 @@ impl ApkMirror {
         &self,
         url: &str,
         type_: Option<&str>,
-    ) -> Result<Vec<DownloadApkMirror>, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
         self.download_by_specifics(url, type_, None, None).await
     }
 
@@ -561,13 +538,13 @@ impl ApkMirror {
         &self,
         url: &str,
         dpi: Option<&str>,
-    ) -> Result<Vec<DownloadApkMirror>, Error> {
+    ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
         self.download_by_specifics(url, None, None, dpi).await
     }
 
     /// Gets the download link of the specified URL without any specific parameters.
     /// This method is a shorthand for `download_by_specifics(url, None, None, None)`.
-    pub async fn _download(&self, url: &str) -> Result<Vec<DownloadApkMirror>, Error> {
+    pub async fn _download(&self, url: &str) -> Result<Vec<DownloadApkMirror>, DownApkError> {
         self.download_by_specifics(url, None, None, None).await
     }
 
@@ -583,15 +560,15 @@ impl ApkMirror {
     /// # Returns
     ///
     /// A `Result` containing the final download link or an `Error` if the download link could not be found.
-    async fn download_link(&self, url: &str, pb: &ProgressBar) -> Result<String, Error> {
+    async fn download_link(&self, url: &str, pb: &ProgressBar) -> Result<String, DownApkError> {
         pb.set_message(format!("Trying to get download page link from {}", url));
         let res = self.client.get(url).send().await?.text().await?;
 
         let document = Html::parse_document(&res);
 
-        let download_button_selector = selector("a.accent_bg.btn.btn-flat.downloadButton");
+        let download_button_selector = selector("a.accent_bg.btn.btn-flat.downloadButton")?;
         let final_download_link_selector =
-            selector("a[rel='nofollow'][data-google-vignette='false']");
+            selector("a[rel='nofollow'][data-google-vignette='false']")?;
 
         let download_link = document.select(&download_button_selector).next();
 
@@ -652,7 +629,7 @@ impl ApkMirror {
 ///
 /// #[tokio::main]
 /// async fn main() {
-///    let apk_mirror = ApkMirror::new().await;
+///    let apk_mirror = ApkMirror::new().await.unwrap();
 ///    let downloads = apk_mirror._download("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/").await.unwrap();
 /// multiple_file_download(&downloads, "com.instagram.lite", "downloads").await.unwrap();
 /// }
@@ -661,7 +638,7 @@ pub async fn multiple_file_download(
     downlinks: &Vec<DownloadApkMirror>,
     package_name: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> Result<(), DownApkError<'static>> {
     for item in downlinks {
         single_file_download(item, package_name, output_dir).await?;
     }
@@ -692,7 +669,7 @@ pub async fn multiple_file_download(
 ///
 /// #[tokio::main]
 /// async fn main() {
-///    let apk_mirror = ApkMirror::new().await;
+///    let apk_mirror = ApkMirror::new().await.unwrap();
 ///   let downloads = apk_mirror._download_by_arch("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("arm64-v8a")).await.unwrap();
 ///  single_file_download(&downloads[0], "com.instagram.lite", "downloads").await.unwrap();
 /// }
@@ -701,16 +678,13 @@ pub async fn single_file_download(
     item: &DownloadApkMirror,
     package_name: &str,
     output_dir: &str,
-) -> Result<(), Error> {
+) -> Result<(), DownApkError<'static>> {
     // if output_dir is not present, create it
     match tokio::fs::create_dir(output_dir).await {
         Ok(_) => {}
         Err(e) => {
             if e.kind() != std::io::ErrorKind::AlreadyExists {
-                panic!(
-                    "Something went wrong while creating output directory. Err: {}",
-                    e
-                );
+                return Err(DownApkError::from(e));
             }
         }
     };

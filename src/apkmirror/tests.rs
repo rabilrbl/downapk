@@ -2,7 +2,9 @@ use super::*;
 
 #[tokio::test]
 async fn test_search() {
-    let downloader = ApkMirror::new().await;
+    let downloader = ApkMirror::new()
+        .await
+        .unwrap_or_else(|err| panic!("Error while creating ApkMirror instance. Err: {}", err));
     let search_query = "com.google.android.youtube";
     let version = "19.02.34";
     let result = downloader.search_by_version(search_query, version).await;
@@ -19,7 +21,9 @@ async fn test_search() {
 
 #[tokio::test]
 async fn test_extract_root_links() {
-    let downloader = ApkMirror::new().await;
+    let downloader = ApkMirror::new()
+        .await
+        .unwrap_or_else(|err| panic!("Error while creating ApkMirror instance. Err: {}", err));
     let url = "https://www.apkmirror.com/?post_type=app_release&searchtype=apk&s=com.google.android.youtube";
     let result = downloader.extract_root_links(url, None).await;
     assert!(result.is_ok());
@@ -34,7 +38,9 @@ async fn test_extract_root_links() {
 
 #[tokio::test]
 async fn test_download() {
-    let downloader = ApkMirror::new().await;
+    let downloader = ApkMirror::new()
+        .await
+        .unwrap_or_else(|err| panic!("Error while creating ApkMirror instance. Err: {}", err));
     let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
     let arch = "arm64-v8a";
     let type_ = "APK";

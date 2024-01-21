@@ -1,4 +1,5 @@
 mod apkmirror;
+mod errors;
 mod utils;
 
 use apkmirror::{multiple_file_download, single_file_download, ApkMirror};
@@ -64,7 +65,9 @@ struct Args {
 async fn main() {
     let args = Args::parse();
 
-    let apkmirror = ApkMirror::new().await;
+    let apkmirror = ApkMirror::new()
+        .await
+        .unwrap_or_else(|err| panic!("Error while creating ApkMirror instance. Err: {}", err));
 
     let package_id = args.package_id;
     let output_dir = args.output_dir;
@@ -131,20 +134,18 @@ async fn main() {
             panic!("No apk files found for download. Retry again after some time");
         }
         1 => 2,
-        _ => {
-            match args.download_option {
-                Some(ref option) => match option {
-                    DownloadOption::All => 2,
-                    DownloadOption::One => 1,
-                },
-                None => {
-                    println!("There are multiple apk files available for download");
-                    println!("1. Download one specific file");
-                    println!("2. Download all files");
-                    read_input("Choose a number from above:")
-                }
+        _ => match args.download_option {
+            Some(ref option) => match option {
+                DownloadOption::All => 2,
+                DownloadOption::One => 1,
+            },
+            None => {
+                println!("There are multiple apk files available for download");
+                println!("1. Download one specific file");
+                println!("2. Download all files");
+                read_input("Choose a number from above:")
             }
-        }
+        },
     };
 
     println!();
