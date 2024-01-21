@@ -100,19 +100,6 @@ impl From<String> for ApkType {
     }
 }
 
-/// Returns the string representation of the ApkType variant.
-///
-/// This matches on the variant and returns "BUNDLE" or "APK".
-/// Used to easily get the string version of the enum.
-impl ApkType {
-    fn as_str(&self) -> &str {
-        match self {
-            ApkType::Bundle => "BUNDLE",
-            ApkType::Apk => "APK",
-        }
-    }
-}
-
 /// Represents an ApkMirror instance. This struct contains:
 /// - `client`: The reqwest client used to make HTTP requests.
 /// - `host`: The host URL of the ApkMirror website.
@@ -480,6 +467,12 @@ impl ApkMirror {
                     .map(|element| element.text().collect::<String>())
                     .unwrap_or_default();
 
+                let badge = match badge_text.as_str() {
+                    "APK" => ApkType::Apk,
+                    "BUNDLE" => ApkType::Bundle,
+                    _ => continue,
+                };
+
                 let anchor_elem = match table_head_element
                     .select(&a_accent_color_download_button_selector)
                     .next()
@@ -498,8 +491,8 @@ impl ApkMirror {
                 );
 
                 if !badge_text.is_empty() && !version.is_empty() && !download_link.is_empty() {
-                    if let Some(apk_type) = &apk_type {
-                        if apk_type.as_str() != badge_text {
+                    if let Some(apk_type) = apk_type {
+                        if apk_type != badge {
                             pb.set_message(format!("Skipping type {}", badge_text));
                             continue;
                         }
