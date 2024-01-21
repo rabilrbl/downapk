@@ -47,7 +47,7 @@ pub struct ExtractedLink {
 }
 
 /// Implements the `Default` trait for the `ExtractedLinks` struct.
-/// 
+///
 /// This allows creating a default instance of `ExtractedLinks` using the `default()` method.
 /// The default instance has all fields initialized with empty strings.
 impl Default for ExtractedLink {
@@ -644,12 +644,12 @@ impl ApkMirror {
 /// # Returns
 ///
 /// A `Result` containing `()` or an `Error` if the download fails.
-/// 
+///
 /// # Example
-/// 
+///
 /// ```rust
 /// use downapk::apkmirror::{ApkMirror, multiple_file_download};
-/// 
+///
 /// #[tokio::main]
 /// async fn main() {
 ///    let apk_mirror = ApkMirror::new().await;
