@@ -63,7 +63,12 @@ impl Default for ExtractedLink {
     }
 }
 
-/// Represents an ApkMirror instance.
+/// Represents an ApkMirror instance. This struct contains:
+/// - `client`: The reqwest client used to make HTTP requests.
+/// - `host`: The host URL of the ApkMirror website.
+/// - `spinner`: The progress spinner style for loading animations.
+///
+/// This is exported as part of the public API.
 pub struct ApkMirror {
     /// The reqwest client.
     client: Client,
