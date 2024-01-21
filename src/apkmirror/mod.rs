@@ -131,8 +131,9 @@ impl ApkMirror {
             .default_headers(headers)
             .build()?;
 
-        let spinner_style = ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")?
-            .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
+        let spinner_style =
+            ProgressStyle::with_template("{prefix:.bold.dim} {spinner} {wide_msg}")?
+                .tick_chars("⠁⠂⠄⡀⢀⠠⠐⠈ ");
 
         let pb = ProgressBar::new(40);
         pb.set_style(spinner_style.clone());
