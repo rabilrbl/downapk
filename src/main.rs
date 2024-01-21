@@ -112,15 +112,15 @@ async fn main() {
     });
 
     // make sure choice is within range of results
-    if choice > results.len() {
+    if choice == 0 || choice > results.len() {
         panic!(
             "Invalid search index. Choose a number from 1 to {}",
             results.len()
         );
     }
-    let download_url = &results[choice - 1].link.clone();
+    let download_url = results[choice - 1].link.clone();
     let download_result = apkmirror
-        .download_by_specifics(download_url, type_, arch, dpi)
+        .download_by_specifics(&download_url, type_, arch, dpi)
         .await
         .unwrap_or_else(|err| {
             panic!("Error while calling download_by_specifics. Err {}", err);
