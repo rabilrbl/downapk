@@ -16,10 +16,10 @@ repository = "https://github.com/rabilrbl/downapk"
 clap = { version = "^4.4", features = ["derive"] }
 console = "^0.15"
 indicatif = "^0.17"
-openssl = { version = "^0.10", features = ["vendored"] }
 reqwest = { version = "^0.11", features = ["cookies"] }
 scraper = "^0.18"
 tokio = { version = "^1.35", features = ["full"] }
+
 
 [profile.release]
 strip = true
