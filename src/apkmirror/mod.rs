@@ -427,7 +427,7 @@ impl ApkMirror {
     /// # Arguments
     ///
     /// * `url` - The URL of the APK to download.
-    /// * `type_` - Optional type of the APK (e.g., arm64-v8a).
+    /// * `apk_type` - Optional type of the APK (e.g., arm64-v8a).
     /// * `arch_` - Optional architecture of the APK (e.g., arm64).
     /// * `dpi` - Optional DPI (dots per inch) of the APK.
     ///
@@ -438,12 +438,12 @@ impl ApkMirror {
     /// # Example
     ///
     /// ```rust
-    /// use downapk::apkmirror::ApkMirror;
+    /// use downapk::apkmirror::{ApkMirror, ApkType};
     ///
     /// #[tokio::main]
     /// async fn main() {
     ///     let apk_mirror = ApkMirror::new().await.unwrap();
-    ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some("APK"), Some("arm64-v8a"), Some("nodpi")).await;
+    ///     let downloads = apk_mirror.download_by_specifics("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/", Some(ApkType::Apk), Some("arm64-v8a"), Some("nodpi")).await;
     /// }
     /// ```
     pub async fn download_by_specifics(
