@@ -13,13 +13,13 @@ repository = "https://github.com/rabilrbl/downapk"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.4.18", features = ["derive"] }
-console = "0.15.8"
-indicatif = "0.17.7"
-openssl = { version = "0.10", features = ["vendored"] }
-reqwest = { version = "0.11", features = ["cookies"] }
-scraper = "0.18.1"
-tokio = { version = "1.35", features = ["full"] }
+clap = { version = "^4.4", features = ["derive"] }
+console = "^0.15"
+indicatif = "^0.17"
+openssl = { version = "^0.10", features = ["vendored"] }
+reqwest = { version = "^0.11", features = ["cookies"] }
+scraper = "^0.18"
+tokio = { version = "^1.35", features = ["full"] }
 
 [profile.release]
 strip = true
