@@ -625,7 +625,7 @@ impl ApkMirror {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```no_run
 /// use downapk::apkmirror::{ApkMirror, multiple_file_download};
 ///
 /// #[tokio::main]
