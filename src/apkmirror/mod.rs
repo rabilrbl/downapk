@@ -79,7 +79,15 @@ pub struct ApkMirror {
 }
 
 impl ApkMirror {
-    /// Initializes a new instance of `ApkMirror`.
+    /// Initializes a new ApkMirror instance with a reqwest client, host URL,
+    /// and progress spinner style.
+    ///
+    /// Sends a request to apkmirror.com to get valid cookies before creating
+    /// the client. Configures the client with headers and enables cookie storage.
+    /// Creates a progress spinner style template. Validates that the homepage
+    /// loads correctly.
+    ///
+    /// Returns the constructed ApkMirror instance to use for making requests.
     ///
     /// # Example
     ///
