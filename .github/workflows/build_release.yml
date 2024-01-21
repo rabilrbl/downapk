@@ -57,6 +57,7 @@ jobs:
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Upload binaries to release
+        if: startsWith(github.ref_name, 'v')
         run: |
             mv target/${{ matrix.target }}/release/downapk${{ matrix.extension }} target/${{ matrix.target }}/release/downapk-${{ matrix.target }}${{ matrix.extension }}
             gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk-${{ matrix.target }}${{ matrix.extension }}
@@ -102,6 +103,7 @@ jobs:
         run: cross build --release --target ${{ matrix.target }}
 
       - name: Upload binaries to release
+        if: startsWith(github.ref_name, 'v')
         shell: bash
         run: |
             mv target/${{ matrix.target }}/release/downapk target/${{ matrix.target }}/release/downapk-${{ matrix.target }}
