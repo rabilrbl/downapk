@@ -19,17 +19,17 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            filename: downapk-linux-x86_64
+            
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            filename: downapk-windows-x86_64.exe
             extension: .exe
+            
           - os: macos-latest
             target: x86_64-apple-darwin
-            filename: downapk-darwin-x86_64
+            
           - os: macos-latest
             target: aarch64-apple-darwin
-            filename: downapk-darwin-aarch64
+            
 
     steps:
       - name: Checkout code
@@ -55,30 +55,12 @@ jobs:
       - name: Build for ${{ matrix.target }}
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Compress action step
-        uses: a7ul/tar-action@master
-        with:
-          command: c
-          cwd: target/${{ matrix.target }}/release
-          files: |
-            downapk${{ matrix.extension }}
-          outPath: target/${{ matrix.target }}/release/downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
-
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk${{ matrix.extension }}
-          asset_name: ${{ matrix.filename }}
-          tag: ${{ github.ref }}
-          file_glob: false
-
-      - name: Upload tar.gz to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
-          asset_name: downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
+          asset_name: downapk-${{ matrix.target }}${{ matrix.extension }}
           tag: ${{ github.ref }}
           file_glob: false
 
@@ -88,17 +70,12 @@ jobs:
       matrix:
         include:
           - target: aarch64-unknown-linux-gnu
-            filename: downapk-linux-aarch64
           - target: aarch64-linux-android
-            filename: downapk-android-aarch64
           - target: armv7-unknown-linux-gnueabihf
-            filename: downapk-linux-armv7
           - target: armv7-linux-androideabi
-            filename: downapk-android-armv7
           - target: x86_64-linux-android
-            filename: downapk-android-x86_64
           - target: i686-unknown-linux-gnu
-            filename: downapk-linux-i686
+            
 
     steps:
       - name: Checkout code
@@ -125,30 +102,12 @@ jobs:
       - name: Build ${{ matrix.target }}
         run: cross build --release --target ${{ matrix.target }}
 
-      - name: Compress action step
-        uses: a7ul/tar-action@master
-        with:
-          command: c
-          cwd: target/${{ matrix.target }}/release
-          files: |
-            downapk
-          outPath: target/${{ matrix.target }}/release/downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
-
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: target/${{ matrix.target }}/release/downapk
-          asset_name: ${{ matrix.filename }}
-          tag: ${{ github.ref }}
-          file_glob: false
-
-      - name: Upload tar.gz to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/${{ matrix.target }}/release/downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
-          asset_name: downapk-${{ matrix.target }}-${{ github.event.release.tag_name }}.tar.gz
+          asset_name: downapk-${{ matrix.target }}
           tag: ${{ github.ref }}
           file_glob: false
 

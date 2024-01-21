@@ -32,3 +32,6 @@ pre-build = "./scripts/prebuild.sh"
 
 [target.'cfg(target_arch = "i686")']
 pre-build = "./scripts/prebuild.sh"
+
+[package.metadata.binstall]
+bin-dir = "{ bin }-{ target }{ binary-ext }"
