@@ -31,7 +31,7 @@ pub struct DownloadApkMirror {
 }
 
 /// Represents the extracted links from a source.
-pub struct ExtractedLinks {
+pub struct ExtractedLink {
     /// The version of the extracted link.
     pub version: String,
     /// The number of downloads for the extracted link.
@@ -44,6 +44,23 @@ pub struct ExtractedLinks {
     pub link: String,
     /// The title of the extracted link.
     pub title: String,
+}
+
+/// Implements the `Default` trait for the `ExtractedLinks` struct.
+/// 
+/// This allows creating a default instance of `ExtractedLinks` using the `default()` method.
+/// The default instance has all fields initialized with empty strings.
+impl Default for ExtractedLink {
+    fn default() -> Self {
+        ExtractedLink {
+            version: String::new(),
+            downloads: String::new(),
+            file_size: String::new(),
+            uploaded: String::new(),
+            link: String::new(),
+            title: String::new(),
+        }
+    }
 }
 
 /// Represents an ApkMirror instance.
@@ -192,7 +209,7 @@ impl ApkMirror {
         &self,
         url: &str,
         version: Option<&str>,
-    ) -> Result<Vec<ExtractedLinks>, Error> {
+    ) -> Result<Vec<ExtractedLink>, Error> {
         let pb = ProgressBar::new(40);
         pb.set_style(self.spinner.clone());
         pb.set_prefix(format!(" {} Search", LOOKING_GLASS));
@@ -218,19 +235,12 @@ impl ApkMirror {
         let info_name_selector = selector("span.infoSlide-name");
         let info_value_selector = selector("span.infoSlide-value");
 
-        let mut results: Vec<ExtractedLinks> = vec![];
+        let mut results: Vec<ExtractedLink> = vec![];
 
         pb.set_message("Processing each APK result");
         for element in document.select(&list_widget_selector).take(1) {
             for element in element.select(&div_without_class_selector) {
-                let mut temp_result: ExtractedLinks = ExtractedLinks {
-                    version: "".to_string(),
-                    downloads: "".to_string(),
-                    file_size: "".to_string(),
-                    uploaded: "".to_string(),
-                    link: "".to_string(),
-                    title: "".to_string(),
-                };
+                let mut extracted_link = ExtractedLink::default();
                 let link = element.select(&link_selector).next();
                 let info = element.select(&info_selector).next();
 
@@ -274,10 +284,10 @@ impl ApkMirror {
                             };
 
                             match name.as_str() {
-                                "Version" => temp_result.version = value,
-                                "Downloads" => temp_result.downloads = value,
-                                "File Size" => temp_result.file_size = value,
-                                "Uploaded" => temp_result.uploaded = value,
+                                "Version" => extracted_link.version = value,
+                                "Downloads" => extracted_link.downloads = value,
+                                "File Size" => extracted_link.file_size = value,
+                                "Uploaded" => extracted_link.uploaded = value,
                                 _ => continue,
                             }
                         }
@@ -286,15 +296,15 @@ impl ApkMirror {
                 };
 
                 if let Some(version) = version {
-                    if temp_result.version != version {
+                    if extracted_link.version != version {
                         continue;
                     }
                 }
 
-                temp_result.title = text;
-                temp_result.link = link;
+                extracted_link.title = text;
+                extracted_link.link = link;
 
-                results.push(temp_result);
+                results.push(extracted_link);
             }
         }
         pb.finish_with_message("Finished search");
@@ -323,7 +333,7 @@ impl ApkMirror {
     ///     let results = apk_mirror.search("com.instagram.lite").await;
     /// }
     /// ```
-    pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLinks>, Error> {
+    pub async fn search(&self, search_query: &str) -> Result<Vec<ExtractedLink>, Error> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
@@ -358,7 +368,7 @@ impl ApkMirror {
         &self,
         search_query: &str,
         version: &str,
-    ) -> Result<Vec<ExtractedLinks>, Error> {
+    ) -> Result<Vec<ExtractedLink>, Error> {
         let url = self.absolute_url(&format!(
             "/?post_type=app_release&searchtype=apk&s={}",
             search_query
