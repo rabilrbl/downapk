@@ -644,6 +644,19 @@ impl ApkMirror {
 /// # Returns
 ///
 /// A `Result` containing `()` or an `Error` if the download fails.
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use downapk::apkmirror::{ApkMirror, multiple_file_download};
+/// 
+/// #[tokio::main]
+/// async fn main() {
+///    let apk_mirror = ApkMirror::new().await;
+///    let downloads = apk_mirror._download("https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/").await.unwrap();
+/// multiple_file_download(&downloads, "com.instagram.lite", "downloads").await.unwrap();
+/// }
+/// ```
 pub async fn multiple_file_download(
     downlinks: &Vec<DownloadApkMirror>,
     package_name: &str,
