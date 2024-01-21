@@ -2,7 +2,13 @@ mod apkmirror;
 mod utils;
 
 use apkmirror::{multiple_file_download, single_file_download, ApkMirror};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
+
+#[derive(Debug, Clone, ValueEnum)]
+enum DownloadOption {
+    One,
+    All,
+}
 
 /// Program to download APKs of given Android package ID
 #[derive(Parser, Debug)]
@@ -43,10 +49,9 @@ struct Args {
     search_index: Option<usize>,
 
     /// Optional: Whether to download all apks or one from final download page
-    /// Possible values: one, all
     /// Default: None. User will be prompted to choose an index
     #[arg(short, long)]
-    download_option: Option<String>,
+    download_option: Option<DownloadOption>,
 
     /// If download option is `one` then this is the index of the apk to download
     /// Possible values: 1, 2, 3, ...
@@ -128,13 +133,9 @@ async fn main() {
         1 => 2,
         _ => {
             let choice_ = match args.download_option {
-                Some(ref option) => match option.as_str() {
-                    "all" => 2,
-                    "one" => 1,
-                    _ => panic!(
-                        "Invalid download option `{}`. Possible values all or one",
-                        choice
-                    ),
+                Some(ref option) => match option {
+                    DownloadOption::All => 2,
+                    DownloadOption::One => 1,
                 },
                 None => {
                     println!("There are multiple apk files available for download");
