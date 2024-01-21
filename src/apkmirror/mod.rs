@@ -743,10 +743,9 @@ pub async fn single_file_download(
     let version = &item.version;
     let arch = &item.arch;
     let dpi = &item.screen_dpi;
-    let extension = match item.apk_type.as_str() {
-        "APK" => "apk",
-        "BUNDLE" => "apkm",
-        ext => panic!("Got an unknown apk type: {}", ext),
+    let extension = match item.apk_type {
+        ApkType::Apk => "apk",
+        ApkType::Bundle => "apkm",
     };
 
     let mut res = reqwest::get(url).await?;
