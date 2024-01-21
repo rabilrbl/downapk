@@ -132,7 +132,7 @@ async fn main() {
         }
         1 => 2,
         _ => {
-            let choice_ = match args.download_option {
+            match args.download_option {
                 Some(ref option) => match option {
                     DownloadOption::All => 2,
                     DownloadOption::One => 1,
@@ -143,8 +143,7 @@ async fn main() {
                     println!("2. Download all files");
                     read_input("Choose a number from above:")
                 }
-            };
-            choice_
+            }
         }
     };
 
