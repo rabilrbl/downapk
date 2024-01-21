@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload binaries to release
         run: |
-            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk${{ matrix.extension }}%#%downapk-${{ matrix.target }}${{ matrix.extension }}
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk${{ matrix.extension }} %#%downapk-${{ matrix.target }}${{ matrix.extension }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload binaries to release
         run: |
-            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk%#%downapk-${{ matrix.target }}
+            gh release upload ${{ github.ref_name }} target/${{ matrix.target }}/release/downapk %#%downapk-${{ matrix.target }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
