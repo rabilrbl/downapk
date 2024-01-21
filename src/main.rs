@@ -2,7 +2,7 @@ mod apkmirror;
 mod errors;
 mod utils;
 
-use apkmirror::{multiple_file_download, single_file_download, ApkMirror};
+use apkmirror::{multiple_file_download, single_file_download, ApkMirror, ApkType};
 use clap::{Parser, ValueEnum};
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -34,9 +34,9 @@ struct Args {
     version_code: String,
 
     /// Optional: Type of APK
-    /// Possible values: bundle, apk, all
-    #[arg(short, long, default_value_t = String::from("all"))]
-    type_: String,
+    /// Default: Both
+    #[arg(short('t'), long)]
+    apk_type: Option<ApkType>,
 
     /// Optional: Screen DPI
     /// Possible values: nodpi, 120-320, ..., all
@@ -74,11 +74,6 @@ async fn main() {
     let arch = match args.arch.as_str() {
         "all" | "ALL" => None,
         _ => Some(args.arch.as_str()),
-    };
-    let type_: Option<&str> = match args.type_.as_str() {
-        "bundle" | "BUNDLE" | "split" => Some("BUNDLE"),
-        "apk" | "APK" => Some("APK"),
-        _ => None,
     };
     let dpi = match args.dpi.as_str() {
         "all" | "ALL" => None,
@@ -123,7 +118,7 @@ async fn main() {
     }
     let download_url = results[choice - 1].link.clone();
     let download_result = apkmirror
-        .download_by_specifics(&download_url, type_, arch, dpi)
+        .download_by_specifics(&download_url, args.apk_type, arch, dpi)
         .await
         .unwrap_or_else(|err| {
             panic!("Error while calling download_by_specifics. Err {}", err);
@@ -157,7 +152,7 @@ async fn main() {
                         "{}. {} {} {} {} {}",
                         i + 1,
                         result.version,
-                        result.type_,
+                        result.apk_type,
                         result.arch,
                         result.screen_dpi,
                         result.min_version

@@ -43,10 +43,10 @@ async fn test_download() {
         .unwrap_or_else(|err| panic!("Error while creating ApkMirror instance. Err: {}", err));
     let url = "https://www.apkmirror.com/apk/instagram/instagram-lite/instagram-lite-390-0-0-9-116-release/";
     let arch = "arm64-v8a";
-    let type_ = "APK";
+    let apk_type = ApkType::Apk;
     let dpi = "nodpi";
     let result = downloader
-        .download_by_specifics(url, Some(type_), Some(arch), Some(dpi))
+        .download_by_specifics(url, Some(apk_type), Some(arch), Some(dpi))
         .await;
     assert!(result.is_ok());
     let download_apkmirror_result =
@@ -55,11 +55,10 @@ async fn test_download() {
     for item in &download_apkmirror_result {
         assert!(!item.version.is_empty());
         assert!(!item.download_link.is_empty());
-        assert!(!item.type_.is_empty());
         assert!(!item.arch.is_empty());
         assert!(!item.min_version.is_empty());
         assert!(!item.screen_dpi.is_empty());
-        assert_eq!(item.type_, type_.to_string());
+        assert_eq!(item.apk_type, apk_type);
         assert_eq!(item.arch, arch.to_string());
         assert_eq!(item.screen_dpi, dpi.to_string());
     }

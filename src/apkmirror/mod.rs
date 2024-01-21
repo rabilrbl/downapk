@@ -9,6 +9,7 @@ use scraper::Html;
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use clap::ValueEnum;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
@@ -22,7 +23,7 @@ pub struct DownloadApkMirror {
     /// The download link of the APK file.
     pub download_link: String,
     /// The type of the APK file. It can be either APK or BUNDLE.
-    pub type_: String,
+    pub apk_type: ApkType,
     /// The architecture of the APK file. It can be either arm64-v8a, armeabi-v7a, x86, x86_64, universal.
     pub arch: String,
     /// The minimum version of Android required to run the APK file.
@@ -60,6 +61,54 @@ impl Default for ExtractedLink {
             uploaded: String::new(),
             link: String::new(),
             title: String::new(),
+        }
+    }
+}
+
+/// Represents the type of APK file. This can either be a standard
+/// APK file or an Android App Bundle. Implements Display and AsRef
+/// traits to easily get the string representation.
+#[derive(PartialEq, Debug, Clone, Copy, ValueEnum)]
+pub enum ApkType {
+    Bundle,
+    Apk,
+}
+
+/// Implements the Display trait for ApkType. This allows
+/// printing the ApkType variants as strings.
+impl std::fmt::Display for ApkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ApkType::Bundle => write!(f, "BUNDLE"),
+            ApkType::Apk => write!(f, "APK"),
+        }
+    }
+}
+
+/// Implements the `From<&str>` trait for `ApkType`.
+///
+/// This allows creating an `ApkType` variant from a string.
+/// Matches on the string and returns the corresponding variant.
+/// Panics if an unknown string is provided.
+impl From<String> for ApkType {
+    fn from(s: String) -> Self {
+        match s {
+            s if s == "BUNDLE" => ApkType::Bundle,
+            s if s == "APK" => ApkType::Apk,
+            _ => panic!("Unknown apk type: {}", s),
+        }
+    }
+}
+
+/// Returns the string representation of the ApkType variant.
+///
+/// This matches on the variant and returns "BUNDLE" or "APK".
+/// Used to easily get the string version of the enum.
+impl ApkType {
+    fn as_str(&self) -> &str {
+        match self {
+            ApkType::Bundle => "BUNDLE",
+            ApkType::Apk => "APK",
         }
     }
 }
@@ -400,7 +449,7 @@ impl ApkMirror {
     pub async fn download_by_specifics(
         &self,
         url: &str,
-        type_: Option<&str>,
+        apk_type: Option<ApkType>,
         arch_: Option<&str>,
         dpi: Option<&str>,
     ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
@@ -449,8 +498,8 @@ impl ApkMirror {
                 );
 
                 if !badge_text.is_empty() && !version.is_empty() && !download_link.is_empty() {
-                    if let Some(type_) = type_ {
-                        if type_ != badge_text {
+                    if let Some(apk_type) = &apk_type {
+                        if apk_type.as_str() != badge_text {
                             pb.set_message(format!("Skipping type {}", badge_text));
                             continue;
                         }
@@ -501,7 +550,7 @@ impl ApkMirror {
                                 e
                             ),
                         },
-                        type_: badge_text,
+                        apk_type: ApkType::from(badge_text),
                         arch,
                         min_version,
                         screen_dpi,
@@ -528,9 +577,9 @@ impl ApkMirror {
     pub async fn _download_by_type(
         &self,
         url: &str,
-        type_: Option<&str>,
+        apk_type: Option<ApkType>,
     ) -> Result<Vec<DownloadApkMirror>, DownApkError> {
-        self.download_by_specifics(url, type_, None, None).await
+        self.download_by_specifics(url, apk_type, None, None).await
     }
 
     /// Gets the download link of the specified URL with specific dpi.
@@ -694,7 +743,7 @@ pub async fn single_file_download(
     let version = &item.version;
     let arch = &item.arch;
     let dpi = &item.screen_dpi;
-    let extension = match item.type_.as_str() {
+    let extension = match item.apk_type.as_str() {
         "APK" => "apk",
         "BUNDLE" => "apkm",
         ext => panic!("Got an unknown apk type: {}", ext),
