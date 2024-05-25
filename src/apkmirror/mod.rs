@@ -1,5 +1,6 @@
 use crate::errors::DownApkError;
 use crate::utils::selector;
+use clap::ValueEnum;
 use console::Emoji;
 use core::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -9,7 +10,6 @@ use scraper::Html;
 use std::cmp::min;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
-use clap::ValueEnum;
 
 static LOOKING_GLASS: Emoji<'_, '_> = Emoji("🔍  ", "");
 static SPARKLE: Emoji<'_, '_> = Emoji("✨ ", ":-)");
@@ -538,10 +538,10 @@ impl ApkMirror {
                         version,
                         download_link: match self.download_link(&download_link, &pb).await {
                             Ok(download_link) => download_link,
-                            Err(e) => panic!(
-                                "Something went wrong while getting download link. Err: {}",
-                                e
-                            ),
+                            Err(_) => {
+                                println!("Could not get download link for {}", download_link);
+                                continue;
+                            }
                         },
                         apk_type: ApkType::from(badge_text),
                         arch,
@@ -640,10 +640,10 @@ impl ApkMirror {
                         ));
                         final_download_link.to_string()
                     }
-                    None => panic!("No download link found"),
+                    None => Err(DownApkError::from("No final download link found"))?,
                 }
             }
-            None => panic!("No download link found"),
+            None => Err(DownApkError::from("No download link found"))?,
         };
         pb.set_message("Finished getting download link");
         Ok(final_download_link)

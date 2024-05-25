@@ -48,6 +48,12 @@ impl From<String> for DownApkError<'_> {
     }
 }
 
+impl From<&str> for DownApkError<'_> {
+    fn from(e: &str) -> Self {
+        DownApkError::Other(e.to_string())
+    }
+}
+
 impl From<std::io::Error> for DownApkError<'_> {
     fn from(e: std::io::Error) -> Self {
         DownApkError::IoError(e)
