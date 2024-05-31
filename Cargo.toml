@@ -18,7 +18,7 @@ console = "^0.15"
 indicatif = "^0.17"
 reqwest = { version = "^0.12", default-features = false, features = ["cookies", "rustls-tls-native-roots"] }
 scraper = "^0.19"
-tokio = { version = "^1.37", features = ["full"] }
+tokio = { version = "^1.38", features = ["full"] }
 
 [profile.release]
 strip = true
